@@ -531,151 +531,6 @@ button.primary:disabled{
 
 
 /* =========================================
-   CLOCK & TIMER DUAL CARD (SIMPLE STYLE)
-========================================= */
-
-.clock-card{
-  background:var(--panel);
-
-  border:1px solid var(--panel-line);
-
-  border-radius:4px;
-
-  padding:20px;
-
-  margin-top:14px;
-}
-
-.clock-header{
-  display:flex;
-
-  justify-content:space-between;
-
-  align-items:center;
-
-  margin-bottom:15px;
-}
-
-.mode-toggle-group{
-  display:flex;
-
-  gap:6px;
-}
-
-.simple-mode-btn{
-  background:none;
-
-  border:1px solid var(--panel-line);
-
-  color:var(--text-dim);
-
-  padding:5px 10px;
-
-  font-size:12px;
-
-  border-radius:3px;
-
-  cursor:pointer;
-}
-
-.simple-mode-btn.active{
-  background:var(--bpm);
-
-  color:#04140a;
-
-  border-color:var(--bpm);
-
-  font-weight:600;
-}
-
-.clock-body{
-  display:flex;
-
-  flex-direction:column;
-
-  gap:12px;
-}
-
-.clock-display-simple{
-  font-family:var(--mono);
-
-  font-size:28px;
-
-  color:var(--spo2);
-
-  text-align:center;
-
-  padding:10px;
-
-  background:#060a09;
-
-  border:1px solid var(--panel-line);
-
-  border-radius:3px;
-}
-
-.clock-inputs-row{
-  display:grid;
-
-  grid-template-columns:1fr 1fr;
-
-  gap:8px;
-}
-
-.action-row{
-  display:flex;
-
-  gap:8px;
-
-  margin-top:4px;
-}
-
-.btn-small{
-  flex:1;
-
-  background:var(--bpm);
-
-  color:#04140a;
-
-  border:none;
-
-  padding:8px 12px;
-
-  border-radius:3px;
-
-  cursor:pointer;
-
-  font-weight:600;
-
-  font-size:13px;
-}
-
-.btn-small:hover{
-  filter:brightness(1.08);
-}
-
-.btn-small.stop{
-  background:var(--bad);
-
-  color:#2b0a0a;
-}
-
-.btn-small.cancel{
-  background:none;
-
-  border:1px solid var(--panel-line);
-
-  color:var(--text-dim);
-}
-
-.btn-small.cancel:hover{
-  color:var(--text);
-
-  border-color:var(--text-dim);
-}
-
-
-/* =========================================
    VITALS SIMULATOR
 ========================================= */
 
@@ -769,7 +624,7 @@ button.primary:disabled{
 
 
 /* =========================================
-   NOTIFICATION SECTION
+   REMINDERS SECTION
 ========================================= */
 
 .notify-card{
@@ -798,6 +653,8 @@ button.primary:disabled{
   font-size:11.5px;
 
   color:var(--text-dim);
+
+  letter-spacing:.04em;
 }
 
 .add-notify{
@@ -807,13 +664,15 @@ button.primary:disabled{
 
   border:none;
 
-  padding:8px 12px;
+  padding:6px 12px;
 
   border-radius:3px;
 
   cursor:pointer;
 
   font-weight:600;
+
+  font-size:12px;
 }
 
 .add-notify:hover{
@@ -830,6 +689,42 @@ button.primary:disabled{
   margin-bottom:10px;
 }
 
+.mode-selector{
+  display:flex;
+
+  gap:6px;
+
+  margin-bottom:12px;
+}
+
+.type-mode-btn{
+  flex:1;
+
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  padding:6px;
+
+  font-size:12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+}
+
+.type-mode-btn.active{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  border-color:var(--bpm);
+
+  font-weight:600;
+}
+
 .time-row{
   display:grid;
 
@@ -840,10 +735,20 @@ button.primary:disabled{
   margin-bottom:10px;
 }
 
+.timer-row{
+  display:grid;
+
+  grid-template-columns:1fr 1fr;
+
+  gap:6px;
+
+  margin-bottom:10px;
+}
+
 .notify-message{
   width:100%;
 
-  font-size:14px;
+  font-size:13.5px;
 }
 
 .notify-save,
@@ -857,6 +762,8 @@ button.primary:disabled{
   border-radius:3px;
 
   cursor:pointer;
+
+  font-size:12.5px;
 }
 
 .notify-save{
@@ -871,6 +778,8 @@ button.primary:disabled{
   background:var(--off);
 
   color:var(--text);
+
+  margin-left:6px;
 }
 
 .notify-item{
@@ -882,7 +791,7 @@ button.primary:disabled{
 
   gap:10px;
 
-  padding:13px 0;
+  padding:12px 0;
 
   border-top:1px solid var(--panel-line);
 }
@@ -891,12 +800,40 @@ button.primary:disabled{
   flex:1;
 }
 
+.notify-time-wrap{
+  display:flex;
+
+  align-items:center;
+
+  gap:8px;
+}
+
 .notify-time{
   font-family:var(--mono);
 
   color:var(--bpm);
 
   font-size:15px;
+}
+
+.notify-time.timer-mode{
+  color:var(--spo2);
+}
+
+.badge-type{
+  font-size:10px;
+
+  padding:2px 5px;
+
+  border-radius:2px;
+
+  background:var(--off);
+
+  color:var(--text-dim);
+
+  text-transform:uppercase;
+
+  font-family:var(--mono);
 }
 
 .notify-message-display{
@@ -926,6 +863,8 @@ button.primary:disabled{
   cursor:pointer;
 
   border-radius:3px;
+
+  font-size:11.5px;
 }
 
 .notify-edit:hover{
@@ -1286,65 +1225,6 @@ button.primary:disabled{
 
 
   <!-- =========================================
-       CLOCK & TIMER (COMPACT & SIMPLE)
-  ========================================= -->
-
-  <div class="clock-card">
-
-    <div class="clock-header">
-      <div class="controls-title" style="margin:0;">ALARM & TIMER</div>
-      <div class="mode-toggle-group">
-        <button class="simple-mode-btn active" id="modeAlarmBtn">Alarm</button>
-        <button class="simple-mode-btn" id="modeTimerBtn">Timer</button>
-      </div>
-    </div>
-
-    <div class="clock-body">
-
-      <!-- Name Input -->
-      <input type="text" id="clockNameInput" placeholder="Name / Label" value="Medication">
-
-      <!-- Compact Time Display -->
-      <div class="clock-display-simple" id="clockDisplay">07:00 AM</div>
-
-      <!-- Time Input Fields -->
-      <div id="alarmInputs" class="time-row" style="margin:0;">
-        <select id="alarmHour">
-          <option value="1">01</option><option value="2">02</option><option value="3">03</option>
-          <option value="4">04</option><option value="5">05</option><option value="6">06</option>
-          <option value="7" selected>07</option><option value="8">08</option><option value="9">09</option>
-          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-        </select>
-        <select id="alarmMinute">
-          <option value="00" selected>00</option><option value="05">05</option><option value="10">10</option>
-          <option value="15">15</option><option value="20">20</option><option value="25">25</option>
-          <option value="30">30</option><option value="35">35</option><option value="40">40</option>
-          <option value="45">45</option><option value="50">50</option><option value="55">55</option>
-        </select>
-        <select id="alarmAmPm">
-          <option value="AM" selected>AM</option>
-          <option value="PM">PM</option>
-        </select>
-      </div>
-
-      <div id="timerInputs" class="clock-inputs-row" style="display: none;">
-        <input type="number" id="timerMinutes" min="0" max="99" placeholder="Mins" value="5">
-        <input type="number" id="timerSeconds" min="0" max="59" placeholder="Secs" value="0">
-      </div>
-
-      <!-- Buttons -->
-      <div class="action-row">
-        <button class="btn-small" id="startClockBtn">Set Alarm</button>
-        <button class="btn-small cancel" id="resetClockBtn">Reset</button>
-      </div>
-
-    </div>
-
-  </div>
-
-
-
-  <!-- =========================================
        VITALS SIMULATOR (TEST / DEMO)
   ========================================= -->
 
@@ -1375,7 +1255,7 @@ button.primary:disabled{
 
 
   <!-- =========================================
-       NOTIFICATION SCHEDULER
+       SCHEDULED REMINDERS
   ========================================= -->
 
   <div class="notify-card">
@@ -1384,7 +1264,7 @@ button.primary:disabled{
     <div class="notify-header">
 
       <div class="notify-title">
-        SCHEDULE NOTIFICATIONS
+        SCHEDULED REMINDERS
       </div>
 
 
@@ -1406,9 +1286,35 @@ button.primary:disabled{
       id="notifyForm"
     >
 
+      <!-- Alarm vs Timer Selector -->
 
-      <div class="time-row">
+      <div class="mode-selector">
 
+        <button
+          type="button"
+          class="type-mode-btn active"
+          id="formAlarmModeBtn"
+        >
+          Alarm Time
+        </button>
+
+        <button
+          type="button"
+          class="type-mode-btn"
+          id="formTimerModeBtn"
+        >
+          Timer Countdown
+        </button>
+
+      </div>
+
+
+      <!-- Alarm Inputs -->
+
+      <div
+        class="time-row"
+        id="alarmInputsRow"
+      >
 
         <select id="notifyHour">
 
@@ -1418,7 +1324,7 @@ button.primary:disabled{
           <option value="4">04</option>
           <option value="5">05</option>
           <option value="6">06</option>
-          <option value="7">07</option>
+          <option value="7" selected>07</option>
           <option value="8">08</option>
           <option value="9">09</option>
           <option value="10">10</option>
@@ -1430,7 +1336,7 @@ button.primary:disabled{
 
         <select id="notifyMinute">
 
-          <option value="0">00</option>
+          <option value="0" selected>00</option>
           <option value="5">05</option>
           <option value="10">10</option>
           <option value="15">15</option>
@@ -1448,7 +1354,7 @@ button.primary:disabled{
 
         <select id="notifyAmPm">
 
-          <option value="AM">
+          <option value="AM" selected>
             AM
           </option>
 
@@ -1458,16 +1364,43 @@ button.primary:disabled{
 
         </select>
 
-
       </div>
 
+
+      <!-- Timer Inputs -->
+
+      <div
+        class="timer-row"
+        id="timerInputsRow"
+        style="display:none;"
+      >
+
+        <input
+          type="number"
+          id="timerMins"
+          min="0"
+          max="99"
+          placeholder="Minutes"
+          value="5"
+        />
+
+        <input
+          type="number"
+          id="timerSecs"
+          min="0"
+          max="59"
+          placeholder="Seconds"
+          value="0"
+        />
+
+      </div>
 
 
       <input
         class="notify-message"
         id="notifyMessage"
         type="text"
-        placeholder="Notification message"
+        placeholder="Reminder label / message"
       />
 
 
@@ -1491,7 +1424,7 @@ button.primary:disabled{
 
 
 
-    <!-- NOTIFICATION LIST -->
+    <!-- REMINDERS LIST -->
 
     <div id="notifyList"></div>
 
@@ -1724,7 +1657,6 @@ logoutBtn.addEventListener(
   async () => {
 
     stopAllVitalSimulations();
-    resetClockState();
 
     await signOut(auth);
 
@@ -2349,184 +2281,6 @@ ledToggle.addEventListener(
 
 
 /* =========================================
-   ALARM & TIMER DUAL SYSTEM
-========================================= */
-
-const modeAlarmBtn = document.getElementById("modeAlarmBtn");
-const modeTimerBtn = document.getElementById("modeTimerBtn");
-const clockNameInput = document.getElementById("clockNameInput");
-const clockDisplay = document.getElementById("clockDisplay");
-const alarmInputs = document.getElementById("alarmInputs");
-const timerInputs = document.getElementById("timerInputs");
-const startClockBtn = document.getElementById("startClockBtn");
-const resetClockBtn = document.getElementById("resetClockBtn");
-
-const alarmHourSelect = document.getElementById("alarmHour");
-const alarmMinSelect = document.getElementById("alarmMinute");
-const alarmAmPmSelect = document.getElementById("alarmAmPm");
-
-const timerMinInput = document.getElementById("timerMinutes");
-const timerSecInput = document.getElementById("timerSeconds");
-
-let currentMode = "alarm";
-let isRunning = false;
-let clockInterval = null;
-
-let timerTotalSec = 0;
-let timerRemainingSec = 0;
-let alarmTargetTime = null;
-
-function switchMode(mode) {
-  resetClockState();
-  currentMode = mode;
-
-  if (mode === "alarm") {
-    modeAlarmBtn.classList.add("active");
-    modeTimerBtn.classList.remove("active");
-    alarmInputs.style.display = "grid";
-    timerInputs.style.display = "none";
-    startClockBtn.textContent = "Set Alarm";
-    clockNameInput.value = "Medication";
-    updateAlarmPreview();
-  } else {
-    modeTimerBtn.classList.add("active");
-    modeAlarmBtn.classList.remove("active");
-    timerInputs.style.display = "grid";
-    alarmInputs.style.display = "none";
-    startClockBtn.textContent = "Start Timer";
-    clockNameInput.value = "Timer";
-    updateTimerPreview();
-  }
-}
-
-function updateAlarmPreview() {
-  if (isRunning) return;
-  const h = String(alarmHourSelect.value).padStart(2, "0");
-  const m = String(alarmMinSelect.value).padStart(2, "0");
-  const ampm = alarmAmPmSelect.value;
-  clockDisplay.textContent = `${h}:${m} ${ampm}`;
-}
-
-function updateTimerPreview() {
-  if (isRunning) return;
-  const mins = parseInt(timerMinInput.value, 10) || 0;
-  const secs = parseInt(timerSecInput.value, 10) || 0;
-  timerTotalSec = (mins * 60) + secs;
-  timerRemainingSec = timerTotalSec;
-
-  const displayMins = Math.floor(timerRemainingSec / 60);
-  const displaySecs = timerRemainingSec % 60;
-  clockDisplay.textContent = `${String(displayMins).padStart(2, "0")}:${String(displaySecs).padStart(2, "0")}`;
-}
-
-function startClockAction() {
-  if (isRunning) {
-    clearInterval(clockInterval);
-    clockInterval = null;
-    isRunning = false;
-    startClockBtn.textContent = currentMode === "alarm" ? "Set Alarm" : "Start Timer";
-    startClockBtn.classList.remove("stop");
-    return;
-  }
-
-  if (currentMode === "alarm") {
-    let hour = Number(alarmHourSelect.value);
-    const minute = Number(alarmMinSelect.value);
-    const ampm = alarmAmPmSelect.value;
-
-    if (ampm === "AM" && hour === 12) hour = 0;
-    if (ampm === "PM" && hour !== 12) hour += 12;
-
-    const now = new Date();
-    alarmTargetTime = new Date();
-    alarmTargetTime.setHours(hour, minute, 0, 0);
-
-    if (alarmTargetTime <= now) {
-      alarmTargetTime.setDate(alarmTargetTime.getDate() + 1);
-    }
-
-    isRunning = true;
-    startClockBtn.textContent = "Cancel";
-    startClockBtn.classList.add("stop");
-
-    clockInterval = setInterval(() => {
-      const current = new Date();
-      if (alarmTargetTime - current <= 0) {
-        clearInterval(clockInterval);
-        resetClockState();
-        triggerAlert("Alarm");
-      }
-    }, 1000);
-
-  } else {
-    if (timerRemainingSec <= 0) updateTimerPreview();
-
-    if (timerRemainingSec <= 0) {
-      alert("Set valid time.");
-      return;
-    }
-
-    isRunning = true;
-    startClockBtn.textContent = "Pause";
-    startClockBtn.classList.add("stop");
-
-    clockInterval = setInterval(() => {
-      timerRemainingSec--;
-      const displayMins = Math.floor(timerRemainingSec / 60);
-      const displaySecs = timerRemainingSec % 60;
-      clockDisplay.textContent = `${String(displayMins).padStart(2, "0")}:${String(displaySecs).padStart(2, "0")}`;
-
-      if (timerRemainingSec <= 0) {
-        clearInterval(clockInterval);
-        resetClockState();
-        triggerAlert("Timer");
-      }
-    }, 1000);
-  }
-}
-
-function resetClockState() {
-  clearInterval(clockInterval);
-  clockInterval = null;
-  isRunning = false;
-  startClockBtn.classList.remove("stop");
-
-  if (currentMode === "alarm") {
-    startClockBtn.textContent = "Set Alarm";
-    updateAlarmPreview();
-  } else {
-    startClockBtn.textContent = "Start Timer";
-    updateTimerPreview();
-  }
-}
-
-function triggerAlert(type) {
-  const label = clockNameInput.value.trim() || type;
-  if ("Notification" in window && Notification.permission === "granted") {
-    new Notification(`${type}: ${label}`, { body: `${label} finished!` });
-  } else {
-    alert(`${type}: ${label}`);
-  }
-}
-
-modeAlarmBtn.addEventListener("click", () => switchMode("alarm"));
-modeTimerBtn.addEventListener("click", () => switchMode("timer"));
-
-alarmHourSelect.addEventListener("change", updateAlarmPreview);
-alarmMinSelect.addEventListener("change", updateAlarmPreview);
-alarmAmPmSelect.addEventListener("change", updateAlarmPreview);
-
-timerMinInput.addEventListener("input", updateTimerPreview);
-timerSecInput.addEventListener("input", updateTimerPreview);
-
-startClockBtn.addEventListener("click", startClockAction);
-resetClockBtn.addEventListener("click", resetClockState);
-
-updateAlarmPreview();
-
-
-
-/* =========================================
    VITALS SIMULATOR
 ========================================= */
 
@@ -2636,40 +2390,56 @@ simSpo2Btn.addEventListener(
 
 
 /* =========================================
-   NOTIFICATION SYSTEM
+   REMINDERS SYSTEM (ALARM & TIMER)
    ========================================= */
 
-const addNotifyBtn =
-  document.getElementById("addNotifyBtn");
+const addNotifyBtn = document.getElementById("addNotifyBtn");
+const saveNotifyBtn = document.getElementById("saveNotifyBtn");
+const cancelNotifyBtn = document.getElementById("cancelNotifyBtn");
 
-const saveNotifyBtn =
-  document.getElementById("saveNotifyBtn");
+const notifyForm = document.getElementById("notifyForm");
+const notifyList = document.getElementById("notifyList");
 
-const cancelNotifyBtn =
-  document.getElementById("cancelNotifyBtn");
+const formAlarmModeBtn = document.getElementById("formAlarmModeBtn");
+const formTimerModeBtn = document.getElementById("formTimerModeBtn");
 
-const notifyForm =
-  document.getElementById("notifyForm");
+const alarmInputsRow = document.getElementById("alarmInputsRow");
+const timerInputsRow = document.getElementById("timerInputsRow");
 
-const notifyList =
-  document.getElementById("notifyList");
+const notifyHour = document.getElementById("notifyHour");
+const notifyMinute = document.getElementById("notifyMinute");
+const notifyAmPm = document.getElementById("notifyAmPm");
 
-const notifyHour =
-  document.getElementById("notifyHour");
+const timerMins = document.getElementById("timerMins");
+const timerSecs = document.getElementById("timerSecs");
 
-const notifyMinute =
-  document.getElementById("notifyMinute");
-
-const notifyAmPm =
-  document.getElementById("notifyAmPm");
-
-const notifyMessage =
-  document.getElementById("notifyMessage");
+const notifyMessage = document.getElementById("notifyMessage");
 
 let scheduledNotifications = [];
 let notificationTimers = {};
+let liveTimerIntervals = {};
 let editingNotificationId = null;
 let notificationsAttached = false;
+let currentFormType = "alarm";
+
+
+function setFormType(type){
+  currentFormType = type;
+  if(type === "alarm"){
+    formAlarmModeBtn.classList.add("active");
+    formTimerModeBtn.classList.remove("active");
+    alarmInputsRow.style.display = "grid";
+    timerInputsRow.style.display = "none";
+  } else {
+    formTimerModeBtn.classList.add("active");
+    formAlarmModeBtn.classList.remove("active");
+    timerInputsRow.style.display = "grid";
+    alarmInputsRow.style.display = "none";
+  }
+}
+
+formAlarmModeBtn.addEventListener("click", () => setFormType("alarm"));
+formTimerModeBtn.addEventListener("click", () => setFormType("timer"));
 
 
 function attachNotificationsListener(){
@@ -2689,12 +2459,14 @@ function attachNotificationsListener(){
       scheduledNotifications =
         Object.entries(data).map(([id, item]) => ({
           id,
+          type: item.type || "alarm",
           time: item.time || "00:00",
-          message: item.message || ""
+          targetTime: item.targetTime || null,
+          message: item.message || "Reminder"
         }));
 
       scheduledNotifications.sort(
-        (a, b) => a.time.localeCompare(b.time)
+        (a, b) => (a.targetTime || 0) - (b.targetTime || 0)
       );
 
       renderNotifications();
@@ -2703,10 +2475,10 @@ function attachNotificationsListener(){
     },
     (err) => {
 
-      console.error("Notification database read failed:", err);
+      console.error("Reminder database read failed:", err);
 
       notifyList.innerHTML =
-        '<div class="empty-notifications">Could not load notifications from Firebase.</div>';
+        '<div class="empty-notifications">Could not load reminders from Firebase.</div>';
 
     }
   );
@@ -2719,9 +2491,12 @@ addNotifyBtn.addEventListener(
 
     editingNotificationId = null;
 
-    notifyHour.value = "12";
+    setFormType("alarm");
+    notifyHour.value = "7";
     notifyMinute.value = "0";
     notifyAmPm.value = "AM";
+    timerMins.value = "5";
+    timerSecs.value = "0";
     notifyMessage.value = "";
 
     notifyForm.style.display = "block";
@@ -2746,85 +2521,71 @@ saveNotifyBtn.addEventListener(
   "click",
   async () => {
 
-    const message =
-      notifyMessage.value.trim();
-
-    if(!message){
-
-      alert("Please enter a notification message.");
-      return;
-
-    }
+    const message = notifyMessage.value.trim() || "Reminder";
 
     if(!auth.currentUser){
-
       alert("Please sign in first.");
       return;
-
     }
 
     if(!("Notification" in window)){
-
       alert("This browser does not support notifications.");
       return;
-
     }
 
     if(Notification.permission !== "granted"){
-
-      const permission =
-        await Notification.requestPermission();
-
+      const permission = await Notification.requestPermission();
       if(permission !== "granted"){
-
         alert("Please allow notifications in your browser.");
         return;
-
       }
-
     }
 
-    let hour =
-      Number(notifyHour.value);
+    let timeStr = "";
+    let targetTime = 0;
 
-    const minute =
-      Number(notifyMinute.value);
+    if(currentFormType === "alarm"){
+      let hour = Number(notifyHour.value);
+      const minute = Number(notifyMinute.value);
+      const ampm = notifyAmPm.value;
 
-    const ampm =
-      notifyAmPm.value;
+      if(ampm === "AM" && hour === 12) hour = 0;
+      if(ampm === "PM" && hour !== 12) hour += 12;
 
-    if(ampm === "AM"){
+      timeStr = String(hour).padStart(2,"0") + ":" + String(minute).padStart(2,"0");
 
-      if(hour === 12){
-        hour = 0;
+      const now = new Date();
+      const target = new Date();
+      target.setHours(hour, minute, 0, 0);
+      if(target.getTime() <= now.getTime()){
+        target.setDate(target.getDate() + 1);
+      }
+      targetTime = target.getTime();
+
+    } else {
+      const mins = parseInt(timerMins.value, 10) || 0;
+      const secs = parseInt(timerSecs.value, 10) || 0;
+      const totalSecs = (mins * 60) + secs;
+
+      if(totalSecs <= 0){
+        alert("Please set a valid timer duration.");
+        return;
       }
 
+      timeStr = `${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;
+      targetTime = Date.now() + (totalSecs * 1000);
     }
-    else{
-
-      if(hour !== 12){
-        hour += 12;
-      }
-
-    }
-
-    const time =
-      String(hour).padStart(2,"0") +
-      ":" +
-      String(minute).padStart(2,"0");
 
     try{
 
       if(editingNotificationId){
 
         await set(
-          ref(
-            db,
-            "notifications/" +
-            editingNotificationId
-          ),
+          ref(db, "notifications/" + editingNotificationId),
           {
-            time: time,
+            type: currentFormType,
+            time: timeStr,
+            targetTime: targetTime,
             message: message
           }
         );
@@ -2832,13 +2593,14 @@ saveNotifyBtn.addEventListener(
       }
       else{
 
-        const newRef =
-          push(ref(db, "notifications"));
+        const newRef = push(ref(db, "notifications"));
 
         await set(
           newRef,
           {
-            time: time,
+            type: currentFormType,
+            time: timeStr,
+            targetTime: targetTime,
             message: message,
             createdAt: Date.now()
           }
@@ -2852,10 +2614,10 @@ saveNotifyBtn.addEventListener(
     }
     catch(err){
 
-      console.error("Could not save notification:", err);
+      console.error("Could not save reminder:", err);
 
       alert(
-        "Could not save notification to Firebase. Check your Database Rules."
+        "Could not save reminder to Firebase. Check your Database Rules."
       );
 
     }
@@ -2866,24 +2628,13 @@ saveNotifyBtn.addEventListener(
 
 function formatTime(time){
 
-  const parts =
-    time.split(":");
+  const parts = time.split(":");
+  let hour = Number(parts[0]);
+  const minute = parts[1];
+  const ampm = hour >= 12 ? "PM" : "AM";
 
-  let hour =
-    Number(parts[0]);
-
-  const minute =
-    parts[1];
-
-  const ampm =
-    hour >= 12 ? "PM" : "AM";
-
-  hour =
-    hour % 12;
-
-  if(hour === 0){
-    hour = 12;
-  }
+  hour = hour % 12;
+  if(hour === 0) hour = 12;
 
   return (
     String(hour).padStart(2,"0") +
@@ -2898,12 +2649,15 @@ function formatTime(time){
 
 function renderNotifications(){
 
+  Object.values(liveTimerIntervals).forEach(i => clearInterval(i));
+  liveTimerIntervals = {};
+
   notifyList.innerHTML = "";
 
   if(scheduledNotifications.length === 0){
 
     notifyList.innerHTML =
-      '<div class="empty-notifications">No notifications scheduled.</div>';
+      '<div class="empty-notifications">No reminders scheduled.</div>';
 
     return;
 
@@ -2912,76 +2666,57 @@ function renderNotifications(){
   scheduledNotifications.forEach(
     item => {
 
-      const row =
-        document.createElement("div");
+      const row = document.createElement("div");
+      row.className = "notify-item";
 
-      row.className =
-        "notify-item";
+      const info = document.createElement("div");
+      info.className = "notify-info";
 
-      const info =
-        document.createElement("div");
+      const timeWrap = document.createElement("div");
+      timeWrap.className = "notify-time-wrap";
 
-      info.className =
-        "notify-info";
+      const time = document.createElement("div");
+      time.className = `notify-time ${item.type === 'timer' ? 'timer-mode' : ''}`;
 
-      const time =
-        document.createElement("div");
+      const badge = document.createElement("span");
+      badge.className = "badge-type";
+      badge.textContent = item.type;
 
-      time.className =
-        "notify-time";
+      if(item.type === "alarm"){
+        time.textContent = formatTime(item.time);
+      } else {
+        const updateTimerDisplay = () => {
+          const remainingSecs = Math.max(0, Math.ceil((item.targetTime - Date.now()) / 1000));
+          const m = Math.floor(remainingSecs / 60);
+          const s = remainingSecs % 60;
+          time.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+        };
+        updateTimerDisplay();
+        liveTimerIntervals[item.id] = setInterval(updateTimerDisplay, 1000);
+      }
 
-      time.textContent =
-        formatTime(item.time);
+      timeWrap.appendChild(time);
+      timeWrap.appendChild(badge);
 
-      const message =
-        document.createElement("div");
+      const message = document.createElement("div");
+      message.className = "notify-message-display";
+      message.textContent = item.message;
 
-      message.className =
-        "notify-message-display";
-
-      message.textContent =
-        item.message;
-
-      info.appendChild(time);
+      info.appendChild(timeWrap);
       info.appendChild(message);
 
-      const actions =
-        document.createElement("div");
+      const actions = document.createElement("div");
+      actions.className = "notify-actions";
 
-      actions.className =
-        "notify-actions";
+      const edit = document.createElement("button");
+      edit.className = "notify-edit";
+      edit.textContent = "Edit";
+      edit.addEventListener("click", () => editNotification(item.id));
 
-      const edit =
-        document.createElement("button");
-
-      edit.className =
-        "notify-edit";
-
-      edit.textContent =
-        "Edit";
-
-      edit.addEventListener(
-        "click",
-        () => {
-          editNotification(item.id);
-        }
-      );
-
-      const removeBtn =
-        document.createElement("button");
-
-      removeBtn.className =
-        "notify-delete";
-
-      removeBtn.textContent =
-        "Delete";
-
-      removeBtn.addEventListener(
-        "click",
-        () => {
-          deleteNotification(item.id);
-        }
-      );
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "notify-delete";
+      removeBtn.textContent = "Delete";
+      removeBtn.addEventListener("click", () => deleteNotification(item.id));
 
       actions.appendChild(edit);
       actions.appendChild(removeBtn);
@@ -2999,52 +2734,33 @@ function renderNotifications(){
 
 function editNotification(id){
 
-  const item =
-    scheduledNotifications.find(
-      n => n.id === id
-    );
+  const item = scheduledNotifications.find(n => n.id === id);
 
-  if(!item){
-    return;
+  if(!item) return;
+
+  editingNotificationId = id;
+  setFormType(item.type);
+
+  if(item.type === "alarm"){
+    const parts = item.time.split(":");
+    let hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    const ampm = hour >= 12 ? "PM" : "AM";
+
+    hour = hour % 12;
+    if(hour === 0) hour = 12;
+
+    notifyHour.value = String(hour);
+    notifyMinute.value = String(minute);
+    notifyAmPm.value = ampm;
+  } else {
+    const remainingSecs = Math.max(0, Math.ceil((item.targetTime - Date.now()) / 1000));
+    timerMins.value = Math.floor(remainingSecs / 60);
+    timerSecs.value = remainingSecs % 60;
   }
 
-  editingNotificationId =
-    id;
-
-  const parts =
-    item.time.split(":");
-
-  let hour =
-    Number(parts[0]);
-
-  const minute =
-    Number(parts[1]);
-
-  const ampm =
-    hour >= 12 ? "PM" : "AM";
-
-  hour =
-    hour % 12;
-
-  if(hour === 0){
-    hour = 12;
-  }
-
-  notifyHour.value =
-    String(hour);
-
-  notifyMinute.value =
-    String(minute);
-
-  notifyAmPm.value =
-    ampm;
-
-  notifyMessage.value =
-    item.message;
-
-  notifyForm.style.display =
-    "block";
-
+  notifyMessage.value = item.message;
+  notifyForm.style.display = "block";
   notifyMessage.focus();
 
 }
@@ -3052,39 +2768,25 @@ function editNotification(id){
 
 async function deleteNotification(id){
 
-  const ok =
-    confirm("Delete this notification?");
+  const ok = confirm("Delete this reminder?");
 
-  if(!ok){
-    return;
-  }
+  if(!ok) return;
 
   try{
 
-    clearTimeout(
-      notificationTimers[id]
-    );
-
+    if(notificationTimers[id]) clearTimeout(notificationTimers[id]);
     delete notificationTimers[id];
 
-    await remove(
-      ref(
-        db,
-        "notifications/" + id
-      )
-    );
+    if(liveTimerIntervals[id]) clearInterval(liveTimerIntervals[id]);
+    delete liveTimerIntervals[id];
+
+    await remove(ref(db, "notifications/" + id));
 
   }
   catch(err){
 
-    console.error(
-      "Could not delete notification:",
-      err
-    );
-
-    alert(
-      "Could not delete notification from Firebase."
-    );
+    console.error("Could not delete reminder:", err);
+    alert("Could not delete reminder from Firebase.");
 
   }
 
@@ -3093,21 +2795,10 @@ async function deleteNotification(id){
 
 function scheduleAllNotifications(){
 
-  Object.values(
-    notificationTimers
-  ).forEach(
-    timer => {
-      clearTimeout(timer);
-    }
-  );
-
+  Object.values(notificationTimers).forEach(timer => clearTimeout(timer));
   notificationTimers = {};
 
-  scheduledNotifications.forEach(
-    item => {
-      scheduleNotification(item);
-    }
-  );
+  scheduledNotifications.forEach(item => scheduleNotification(item));
 
 }
 
@@ -3119,83 +2810,46 @@ function scheduleNotification(item){
     delete notificationTimers[item.id];
   }
 
-  const now =
-    new Date();
+  const delay = item.targetTime - Date.now();
 
-  const parts =
-    item.time.split(":");
-
-  const hour =
-    Number(parts[0]);
-
-  const minute =
-    Number(parts[1]);
-
-  const target =
-    new Date();
-
-  target.setHours(
-    hour,
-    minute,
-    0,
-    0
-  );
-
-  if(target.getTime() <= now.getTime()){
-
-    target.setDate(
-      target.getDate() + 1
-    );
-
+  if(delay <= 0){
+    return;
   }
 
-  const delay =
-    target.getTime() -
-    now.getTime();
-
-  const maxDelay =
-    2147483647;
+  const maxDelay = 2147483647;
 
   if(delay > maxDelay){
-
-    notificationTimers[item.id] =
-      setTimeout(
-        () => {
-          scheduleNotification(item);
-        },
-        maxDelay
-      );
-
+    notificationTimers[item.id] = setTimeout(
+      () => scheduleNotification(item),
+      maxDelay
+    );
     return;
-
   }
 
-  notificationTimers[item.id] =
-    setTimeout(
-      () => {
-
-        showNotification(item);
-
+  notificationTimers[item.id] = setTimeout(
+    () => {
+      showNotification(item);
+      if(item.type === "alarm"){
+        item.targetTime += (24 * 60 * 60 * 1000);
         scheduleNotification(item);
-
-      },
-      delay
-    );
+      } else {
+        deleteNotification(item.id);
+      }
+    },
+    delay
+  );
 
 }
 
 
 function showNotification(item){
 
-  if(
-    Notification.permission !==
-    "granted"
-  ){
-    return;
-  }
+  if(Notification.permission !== "granted") return;
+
+  const title = item.type === "timer" ? "⏱ Timer Elapsed" : "⏰ Reminder Alert";
 
   new Notification(
-    "Vitals Monitor",
+    title,
     {
       body: item.message
     }
