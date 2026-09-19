@@ -1,0 +1,3212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Vitals Monitor</title>
+
+<style>
+
+:root{
+  --bg:#050706;
+  --panel:#0c1210;
+  --panel-line:#1c2622;
+  --text:#dce7e2;
+  --text-dim:#6f8b83;
+  --bpm:#3ef58a;
+  --temp:#ffb648;
+  --spo2:#57c7ff;
+  --bad:#ff5d5d;
+  --off:#2a3530;
+
+  --mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  height:100%;
+  margin:0;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:24px;
+}
+
+.wrap{
+  width:100%;
+  max-width:380px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:28px;
+}
+
+.brand-mark{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--bpm);
+
+  box-shadow:0 0 8px var(--bpm);
+
+  animation:pulse 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse{
+  0%,100%{
+    opacity:1;
+  }
+
+  50%{
+    opacity:.35;
+  }
+}
+
+.brand-name{
+  font-family:var(--mono);
+  font-size:14px;
+  letter-spacing:.04em;
+  color:var(--text-dim);
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  border-radius:4px;
+  padding:28px;
+}
+
+.card h1{
+  font-size:20px;
+  margin:0 0 4px;
+  font-weight:600;
+}
+
+.card p.sub{
+  margin:0 0 24px;
+  color:var(--text-dim);
+  font-size:13px;
+  line-height:1.5;
+}
+
+label{
+  display:block;
+  font-size:12px;
+  color:var(--text-dim);
+  margin-bottom:6px;
+}
+
+.field{
+  margin-bottom:16px;
+}
+
+input, select{
+  width:100%;
+  background:#060a09;
+  border:1px solid var(--panel-line);
+  color:var(--text);
+
+  border-radius:3px;
+  padding:10px 12px;
+
+  font-size:14px;
+  font-family:var(--sans);
+}
+
+input:focus, select:focus{
+  outline:none;
+  border-color:var(--bpm);
+}
+
+button.primary{
+  width:100%;
+  background:var(--bpm);
+  color:#04140a;
+
+  border:none;
+  border-radius:3px;
+
+  padding:11px 12px;
+
+  font-size:14px;
+  font-weight:600;
+
+  cursor:pointer;
+  margin-top:6px;
+}
+
+button.primary:hover{
+  filter:brightness(1.08);
+}
+
+button.primary:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.result{
+  margin-top:18px;
+  padding:12px 14px;
+
+  border-radius:3px;
+
+  font-size:13.5px;
+
+  font-family:var(--mono);
+
+  display:none;
+}
+
+.result.bad{
+  display:block;
+
+  background:rgba(255,93,93,.08);
+  border:1px solid rgba(255,93,93,.4);
+
+  color:var(--bad);
+}
+
+
+/* DASHBOARD */
+
+.dash-wrap{
+  display:none;
+
+  width:100%;
+  max-width:560px;
+}
+
+.dash-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  margin-bottom:20px;
+}
+
+.dash-header .who{
+  font-size:12.5px;
+  color:var(--text-dim);
+}
+
+.dash-header .who span{
+  color:var(--text);
+}
+
+.logout-btn{
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  font-size:12px;
+
+  padding:6px 12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+}
+
+.logout-btn:hover{
+  color:var(--text);
+  border-color:var(--text-dim);
+}
+
+
+/* VITALS */
+
+.vitals-grid{
+  display:grid;
+
+  grid-template-columns:1fr 1fr 1fr;
+
+  gap:14px;
+
+  margin-bottom:14px;
+}
+
+.vital-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+}
+
+.vital-label{
+  font-size:11.5px;
+
+  color:var(--text-dim);
+
+  margin-bottom:10px;
+}
+
+.vital-value{
+  font-family:var(--mono);
+
+  font-size:40px;
+
+  line-height:1;
+
+  font-weight:500;
+}
+
+.vital-value .unit{
+  font-size:16px;
+
+  color:var(--text-dim);
+
+  margin-left:4px;
+}
+
+.vital-value.bpm{
+  color:var(--bpm);
+}
+
+.vital-value.temp{
+  color:var(--temp);
+}
+
+.vital-value.spo2{
+  color:var(--spo2);
+}
+
+.vital-updated{
+  font-size:11px;
+
+  color:var(--text-dim);
+
+  margin-top:10px;
+
+  font-family:var(--mono);
+}
+
+
+/* CONTROLS */
+
+.controls-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+}
+
+.controls-title{
+  font-size:11.5px;
+
+  color:var(--text-dim);
+
+  margin-bottom:16px;
+}
+
+.control-row{
+  display:flex;
+
+  align-items:center;
+
+  justify-content:space-between;
+
+  padding:12px 0;
+
+  border-top:1px solid var(--panel-line);
+}
+
+.control-row:first-of-type{
+  border-top:none;
+
+  padding-top:0;
+}
+
+.control-label{
+  display:flex;
+
+  align-items:center;
+
+  gap:10px;
+
+  font-size:14px;
+}
+
+.indicator{
+  width:14px;
+  height:14px;
+
+  border-radius:50%;
+
+  background:var(--off);
+
+  transition:
+    background .15s,
+    box-shadow .15s;
+}
+
+.indicator.buzzer-on{
+  background:var(--bad);
+
+  box-shadow:0 0 10px var(--bad);
+}
+
+.indicator.led-on{
+  background:#ffe066;
+
+  box-shadow:0 0 10px #ffe066;
+}
+
+.toggle{
+  position:relative;
+
+  width:44px;
+  height:24px;
+
+  background:var(--off);
+
+  border-radius:12px;
+
+  border:none;
+
+  cursor:pointer;
+
+  transition:background .15s;
+}
+
+.toggle::after{
+  content:"";
+
+  position:absolute;
+
+  top:3px;
+  left:3px;
+
+  width:18px;
+  height:18px;
+
+  background:var(--text);
+
+  border-radius:50%;
+
+  transition:transform .15s;
+}
+
+.toggle.on{
+  background:var(--bpm);
+}
+
+.toggle.on::after{
+  transform:translateX(20px);
+
+  background:#04140a;
+}
+
+
+/* =========================================
+   CRITICAL ALERT BANNER
+========================================= */
+
+.alert-banner{
+  display:none;
+
+  background:rgba(255,93,93,.1);
+
+  border:1px solid var(--bad);
+
+  border-radius:4px;
+
+  padding:16px 18px;
+
+  margin-bottom:14px;
+}
+
+.alert-banner.active{
+  display:block;
+
+  animation:alertGlow 1s infinite;
+}
+
+.alert-banner.acknowledged{
+  animation:none;
+
+  background:rgba(255,93,93,.05);
+
+  opacity:.8;
+}
+
+@keyframes alertGlow{
+  0%,100%{
+    box-shadow:0 0 0 rgba(255,93,93,0);
+  }
+
+  50%{
+    box-shadow:0 0 16px rgba(255,93,93,.55);
+  }
+}
+
+.alert-top{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  gap:10px;
+
+  margin-bottom:8px;
+}
+
+.alert-title{
+  color:var(--bad);
+
+  font-weight:700;
+
+  font-size:13.5px;
+
+  letter-spacing:.03em;
+}
+
+.alert-reasons{
+  color:var(--text);
+
+  font-family:var(--mono);
+
+  font-size:13px;
+
+  line-height:1.6;
+
+  margin-bottom:12px;
+}
+
+.ack-btn{
+  background:var(--bad);
+
+  color:#2b0a0a;
+
+  border:none;
+
+  border-radius:3px;
+
+  padding:8px 14px;
+
+  font-weight:700;
+
+  font-size:12.5px;
+
+  cursor:pointer;
+}
+
+.ack-btn:hover{
+  filter:brightness(1.08);
+}
+
+.alert-banner.acknowledged .ack-btn{
+  background:var(--off);
+
+  color:var(--text-dim);
+
+  cursor:default;
+}
+
+
+/* =========================================
+   CLOCK & TIMER DUAL CARD (SIMPLE STYLE)
+========================================= */
+
+.clock-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+
+  margin-top:14px;
+}
+
+.clock-header{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:15px;
+}
+
+.mode-toggle-group{
+  display:flex;
+
+  gap:6px;
+}
+
+.simple-mode-btn{
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  padding:5px 10px;
+
+  font-size:12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+}
+
+.simple-mode-btn.active{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  border-color:var(--bpm);
+
+  font-weight:600;
+}
+
+.clock-body{
+  display:flex;
+
+  flex-direction:column;
+
+  gap:12px;
+}
+
+.clock-display-simple{
+  font-family:var(--mono);
+
+  font-size:28px;
+
+  color:var(--spo2);
+
+  text-align:center;
+
+  padding:10px;
+
+  background:#060a09;
+
+  border:1px solid var(--panel-line);
+
+  border-radius:3px;
+}
+
+.clock-inputs-row{
+  display:grid;
+
+  grid-template-columns:1fr 1fr;
+
+  gap:8px;
+}
+
+.action-row{
+  display:flex;
+
+  gap:8px;
+
+  margin-top:4px;
+}
+
+.btn-small{
+  flex:1;
+
+  background:var(--bpm);
+
+  color:#04140a;
+
+  border:none;
+
+  padding:8px 12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+
+  font-weight:600;
+
+  font-size:13px;
+}
+
+.btn-small:hover{
+  filter:brightness(1.08);
+}
+
+.btn-small.stop{
+  background:var(--bad);
+
+  color:#2b0a0a;
+}
+
+.btn-small.cancel{
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+}
+
+.btn-small.cancel:hover{
+  color:var(--text);
+
+  border-color:var(--text-dim);
+}
+
+
+/* =========================================
+   VITALS SIMULATOR
+========================================= */
+
+.sim-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+
+  margin-top:14px;
+}
+
+.sim-buttons{
+  display:grid;
+
+  grid-template-columns:1fr 1fr 1fr;
+
+  gap:10px;
+
+  margin-bottom:10px;
+}
+
+.sim-btn{
+  background:#1a1010;
+
+  border:1px solid rgba(255,93,93,.4);
+
+  color:var(--bad);
+
+  border-radius:3px;
+
+  padding:10px 8px;
+
+  font-size:12.5px;
+
+  font-weight:600;
+
+  cursor:pointer;
+}
+
+.sim-btn:hover{
+  background:rgba(255,93,93,.12);
+}
+
+.sim-btn.active{
+  background:var(--bad);
+
+  border-color:var(--bad);
+
+  color:#2b0a0a;
+
+  animation:simPulse 1s infinite;
+}
+
+@keyframes simPulse{
+  0%,100%{
+    opacity:1;
+  }
+
+  50%{
+    opacity:.65;
+  }
+}
+
+.sim-reset-btn{
+  width:100%;
+
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  border-radius:3px;
+
+  padding:9px 8px;
+
+  font-size:12.5px;
+
+  cursor:pointer;
+}
+
+.sim-reset-btn:hover{
+  color:var(--text);
+
+  border-color:var(--text-dim);
+}
+
+
+/* =========================================
+   NOTIFICATION SECTION
+========================================= */
+
+.notify-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+
+  margin-top:14px;
+}
+
+.notify-header{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:15px;
+}
+
+.notify-title{
+  font-size:11.5px;
+
+  color:var(--text-dim);
+}
+
+.add-notify{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  border:none;
+
+  padding:8px 12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+
+  font-weight:600;
+}
+
+.add-notify:hover{
+  filter:brightness(1.08);
+}
+
+.notify-form{
+  display:none;
+
+  border-top:1px solid var(--panel-line);
+
+  padding-top:15px;
+
+  margin-bottom:10px;
+}
+
+.time-row{
+  display:grid;
+
+  grid-template-columns:1fr 1fr 1fr;
+
+  gap:6px;
+
+  margin-bottom:10px;
+}
+
+.notify-message{
+  width:100%;
+
+  font-size:14px;
+}
+
+.notify-save,
+.notify-cancel{
+  margin-top:10px;
+
+  padding:8px 12px;
+
+  border:none;
+
+  border-radius:3px;
+
+  cursor:pointer;
+}
+
+.notify-save{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  font-weight:600;
+}
+
+.notify-cancel{
+  background:var(--off);
+
+  color:var(--text);
+}
+
+.notify-item{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  gap:10px;
+
+  padding:13px 0;
+
+  border-top:1px solid var(--panel-line);
+}
+
+.notify-info{
+  flex:1;
+}
+
+.notify-time{
+  font-family:var(--mono);
+
+  color:var(--bpm);
+
+  font-size:15px;
+}
+
+.notify-message-display{
+  color:var(--text-dim);
+
+  font-size:12px;
+
+  margin-top:4px;
+}
+
+.notify-actions{
+  display:flex;
+
+  gap:5px;
+}
+
+.notify-edit,
+.notify-delete{
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  padding:5px 8px;
+
+  cursor:pointer;
+
+  border-radius:3px;
+}
+
+.notify-edit:hover{
+  color:var(--bpm);
+
+  border-color:var(--bpm);
+}
+
+.notify-delete:hover{
+  color:var(--bad);
+
+  border-color:var(--bad);
+}
+
+.empty-notifications{
+  color:var(--text-dim);
+
+  font-size:12px;
+
+  padding-top:5px;
+}
+
+
+/* CONNECTION */
+
+.conn-status{
+  display:flex;
+
+  align-items:center;
+
+  gap:7px;
+
+  font-size:12px;
+
+  color:var(--text-dim);
+
+  margin-top:16px;
+}
+
+.conn-dot{
+  width:7px;
+  height:7px;
+
+  border-radius:50%;
+
+  background:var(--text-dim);
+}
+
+.conn-dot.live{
+  background:var(--bpm);
+
+  box-shadow:0 0 6px var(--bpm);
+}
+
+.conn-dot.stale{
+  background:var(--bad);
+}
+
+
+/* MOBILE */
+
+@media(max-width:420px){
+
+  .vitals-grid{
+    grid-template-columns:1fr;
+  }
+
+  .sim-buttons{
+    grid-template-columns:1fr;
+  }
+
+  .notify-item{
+    align-items:flex-start;
+  }
+
+  .notify-actions{
+    flex-direction:column;
+  }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =========================================
+     LOGIN
+========================================= -->
+
+<div id="authWrap" class="wrap">
+
+  <div class="brand">
+
+    <div class="brand-mark"></div>
+
+    <div class="brand-name">
+      VITALS MONITOR
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <h1>Sign in</h1>
+
+    <p class="sub">
+      Enter the credentials you were given to view live vitals.
+    </p>
+
+
+    <div class="field">
+
+      <label for="username">
+        Username
+      </label>
+
+      <input
+        type="text"
+        id="username"
+        autocomplete="username"
+        placeholder="Username"
+      />
+
+    </div>
+
+
+    <div class="field">
+
+      <label for="password">
+        Password
+      </label>
+
+      <input
+        type="password"
+        id="password"
+        autocomplete="current-password"
+        placeholder="Password"
+      />
+
+    </div>
+
+
+    <button
+      class="primary"
+      id="loginBtn"
+    >
+      Sign in
+    </button>
+
+
+    <div
+      class="result bad"
+      id="result"
+    ></div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================================
+     DASHBOARD
+========================================= -->
+
+<div id="dashWrap" class="dash-wrap">
+
+
+  <div class="dash-header">
+
+    <div class="who">
+      Signed in as
+      <span>patient_vital</span>
+    </div>
+
+    <button
+      class="logout-btn"
+      id="logoutBtn"
+    >
+      Sign out
+    </button>
+
+  </div>
+
+
+  <!-- CRITICAL ALERT BANNER -->
+
+  <div class="alert-banner" id="alertBanner">
+
+    <div class="alert-top">
+      <div class="alert-title">⚠ CRITICAL VITALS ALERT</div>
+
+      <button class="ack-btn" id="ackAlertBtn">
+        Acknowledge
+      </button>
+    </div>
+
+    <div class="alert-reasons" id="alertReasons"></div>
+
+  </div>
+
+
+
+  <!-- VITALS -->
+
+  <div class="vitals-grid">
+
+
+    <div class="vital-card">
+
+      <div class="vital-label">
+        HEART RATE
+      </div>
+
+      <div class="vital-value bpm">
+
+        <span id="bpmValue">
+          --
+        </span>
+
+        <span class="unit">
+          bpm
+        </span>
+
+      </div>
+
+      <div
+        class="vital-updated"
+        id="bpmUpdated"
+      >
+        no data yet
+      </div>
+
+    </div>
+
+
+
+    <div class="vital-card">
+
+      <div class="vital-label">
+        TEMPERATURE
+      </div>
+
+      <div class="vital-value temp">
+
+        <span id="tempValue">
+          --
+        </span>
+
+        <span class="unit">
+          °C
+        </span>
+
+      </div>
+
+      <div
+        class="vital-updated"
+        id="tempUpdated"
+      >
+        no data yet
+      </div>
+
+    </div>
+
+
+
+    <div class="vital-card">
+
+      <div class="vital-label">
+        SPO2
+      </div>
+
+      <div class="vital-value spo2">
+
+        <span id="spo2Value">
+          --
+        </span>
+
+        <span class="unit">
+          %
+        </span>
+
+      </div>
+
+      <div
+        class="vital-updated"
+        id="spo2Updated"
+      >
+        no data yet
+      </div>
+
+    </div>
+
+
+  </div>
+
+
+
+  <!-- CONTROLS -->
+
+  <div class="controls-card">
+
+    <div class="controls-title">
+      DEVICE CONTROLS
+    </div>
+
+
+    <div class="control-row">
+
+      <div class="control-label">
+
+        <div
+          class="indicator"
+          id="buzzerIndicator"
+        ></div>
+
+        Buzzer
+
+      </div>
+
+
+      <button
+        class="toggle"
+        id="buzzerToggle"
+      ></button>
+
+    </div>
+
+
+
+    <div class="control-row">
+
+      <div class="control-label">
+
+        <div
+          class="indicator"
+          id="ledIndicator"
+        ></div>
+
+        LED
+
+      </div>
+
+
+      <button
+        class="toggle"
+        id="ledToggle"
+      ></button>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================================
+       CLOCK & TIMER (COMPACT & SIMPLE)
+  ========================================= -->
+
+  <div class="clock-card">
+
+    <div class="clock-header">
+      <div class="controls-title" style="margin:0;">ALARM & TIMER</div>
+      <div class="mode-toggle-group">
+        <button class="simple-mode-btn active" id="modeAlarmBtn">Alarm</button>
+        <button class="simple-mode-btn" id="modeTimerBtn">Timer</button>
+      </div>
+    </div>
+
+    <div class="clock-body">
+
+      <!-- Name Input -->
+      <input type="text" id="clockNameInput" placeholder="Name / Label" value="Medication">
+
+      <!-- Compact Time Display -->
+      <div class="clock-display-simple" id="clockDisplay">07:00 AM</div>
+
+      <!-- Time Input Fields -->
+      <div id="alarmInputs" class="time-row" style="margin:0;">
+        <select id="alarmHour">
+          <option value="1">01</option><option value="2">02</option><option value="3">03</option>
+          <option value="4">04</option><option value="5">05</option><option value="6">06</option>
+          <option value="7" selected>07</option><option value="8">08</option><option value="9">09</option>
+          <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+        </select>
+        <select id="alarmMinute">
+          <option value="00" selected>00</option><option value="05">05</option><option value="10">10</option>
+          <option value="15">15</option><option value="20">20</option><option value="25">25</option>
+          <option value="30">30</option><option value="35">35</option><option value="40">40</option>
+          <option value="45">45</option><option value="50">50</option><option value="55">55</option>
+        </select>
+        <select id="alarmAmPm">
+          <option value="AM" selected>AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+
+      <div id="timerInputs" class="clock-inputs-row" style="display: none;">
+        <input type="number" id="timerMinutes" min="0" max="99" placeholder="Mins" value="5">
+        <input type="number" id="timerSeconds" min="0" max="59" placeholder="Secs" value="0">
+      </div>
+
+      <!-- Buttons -->
+      <div class="action-row">
+        <button class="btn-small" id="startClockBtn">Set Alarm</button>
+        <button class="btn-small cancel" id="resetClockBtn">Reset</button>
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================================
+       VITALS SIMULATOR (TEST / DEMO)
+  ========================================= -->
+
+  <div class="sim-card">
+
+    <div class="controls-title">
+      SIMULATE CRITICAL VITALS
+    </div>
+
+    <div class="sim-buttons">
+
+      <button class="sim-btn" id="simTempBtn" data-label="Low Temp">
+        Low Temp
+      </button>
+
+      <button class="sim-btn" id="simPulseBtn" data-label="Low Pulse">
+        Low Pulse
+      </button>
+
+      <button class="sim-btn" id="simSpo2Btn" data-label="Low SpO2">
+        Low SpO2
+      </button>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================================
+       NOTIFICATION SCHEDULER
+  ========================================= -->
+
+  <div class="notify-card">
+
+
+    <div class="notify-header">
+
+      <div class="notify-title">
+        SCHEDULE NOTIFICATIONS
+      </div>
+
+
+      <button
+        class="add-notify"
+        id="addNotifyBtn"
+      >
+        + Add
+      </button>
+
+    </div>
+
+
+
+    <!-- ADD / EDIT FORM -->
+
+    <div
+      class="notify-form"
+      id="notifyForm"
+    >
+
+
+      <div class="time-row">
+
+
+        <select id="notifyHour">
+
+          <option value="1">01</option>
+          <option value="2">02</option>
+          <option value="3">03</option>
+          <option value="4">04</option>
+          <option value="5">05</option>
+          <option value="6">06</option>
+          <option value="7">07</option>
+          <option value="8">08</option>
+          <option value="9">09</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+
+        </select>
+
+
+        <select id="notifyMinute">
+
+          <option value="0">00</option>
+          <option value="5">05</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+          <option value="35">35</option>
+          <option value="40">40</option>
+          <option value="45">45</option>
+          <option value="50">50</option>
+          <option value="55">55</option>
+
+        </select>
+
+
+        <select id="notifyAmPm">
+
+          <option value="AM">
+            AM
+          </option>
+
+          <option value="PM">
+            PM
+          </option>
+
+        </select>
+
+
+      </div>
+
+
+
+      <input
+        class="notify-message"
+        id="notifyMessage"
+        type="text"
+        placeholder="Notification message"
+      />
+
+
+      <button
+        class="notify-save"
+        id="saveNotifyBtn"
+      >
+        Save
+      </button>
+
+
+      <button
+        class="notify-cancel"
+        id="cancelNotifyBtn"
+      >
+        Cancel
+      </button>
+
+
+    </div>
+
+
+
+    <!-- NOTIFICATION LIST -->
+
+    <div id="notifyList"></div>
+
+
+  </div>
+
+
+
+  <!-- CONNECTION -->
+
+  <div class="conn-status">
+
+    <div
+      class="conn-dot"
+      id="connDot"
+    ></div>
+
+    <span id="connLabel">
+      Connecting…
+    </span>
+
+  </div>
+
+
+</div>
+
+
+
+<!-- =========================================
+     FIREBASE + JAVASCRIPT
+========================================= -->
+
+<script type="module">
+
+
+/* =========================================
+   FIREBASE IMPORTS
+========================================= */
+
+import {
+  initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+import {
+  getAuth,
+  signInAnonymously,
+  onAuthStateChanged,
+  signOut
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
+  push,
+  remove
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+
+/* =========================================
+   FIREBASE CONFIG
+========================================= */
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyDM5_3qmJVfWc9kF6qHBf4ojWbym4PyX4A",
+
+  authDomain:
+    "netvital.firebaseapp.com",
+
+  databaseURL:
+    "https://netvital-default-rtdb.asia-southeast1.firebasedatabase.app/",
+
+  projectId:
+    "netvital",
+
+  appId:
+    "1:305975124083:web:b9f5ec7adc1497766d0a06"
+
+};
+
+
+
+const app =
+  initializeApp(firebaseConfig);
+
+
+const auth =
+  getAuth(app);
+
+
+const db =
+  getDatabase(app);
+
+
+
+/* =========================================
+   LOGIN
+========================================= */
+
+const MOCK_USERNAME =
+  "patient_vital";
+
+const MOCK_PASSWORD =
+  "iotwork462";
+
+
+const authWrap =
+  document.getElementById("authWrap");
+
+const dashWrap =
+  document.getElementById("dashWrap");
+
+const usernameInput =
+  document.getElementById("username");
+
+const passwordInput =
+  document.getElementById("password");
+
+const loginBtn =
+  document.getElementById("loginBtn");
+
+const result =
+  document.getElementById("result");
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+
+
+loginBtn.addEventListener(
+  "click",
+  handleLogin
+);
+
+
+passwordInput.addEventListener(
+  "keydown",
+  (e) => {
+
+    if (e.key === "Enter") {
+
+      handleLogin();
+
+    }
+
+  }
+);
+
+
+
+async function handleLogin(){
+
+  const u =
+    usernameInput.value.trim();
+
+  const p =
+    passwordInput.value;
+
+
+  if (
+    u !== MOCK_USERNAME ||
+    p !== MOCK_PASSWORD
+  ){
+
+    result.style.display =
+      "block";
+
+    result.textContent =
+      "✘ Incorrect username or password.";
+
+    return;
+
+  }
+
+
+  result.style.display =
+    "none";
+
+  loginBtn.disabled =
+    true;
+
+
+  try{
+
+    await signInAnonymously(auth);
+
+  }
+
+  catch(err){
+
+    result.style.display =
+      "block";
+
+    result.textContent =
+      "Could not connect to the database. Check your Firebase config.";
+
+    console.error(err);
+
+  }
+
+  finally{
+
+    loginBtn.disabled =
+      false;
+
+  }
+
+}
+
+
+
+/* =========================================
+   LOGOUT
+========================================= */
+
+logoutBtn.addEventListener(
+  "click",
+  async () => {
+
+    stopAllVitalSimulations();
+    resetClockState();
+
+    await signOut(auth);
+
+    dashWrap.style.display =
+      "none";
+
+    authWrap.style.display =
+      "block";
+
+    usernameInput.value =
+      "";
+
+    passwordInput.value =
+      "";
+
+  }
+);
+
+
+
+/* =========================================
+   FIREBASE AUTH STATE
+========================================= */
+
+onAuthStateChanged(
+  auth,
+  (user) => {
+
+    if(user){
+
+      authWrap.style.display =
+        "none";
+
+      dashWrap.style.display =
+        "block";
+
+      attachVitalsListener();
+
+      attachControlsListener();
+
+      attachNotificationsListener();
+
+    }
+
+  }
+);
+
+
+
+/* =========================================
+   VITALS
+========================================= */
+
+const bpmValue =
+  document.getElementById("bpmValue");
+
+const tempValue =
+  document.getElementById("tempValue");
+
+const spo2Value =
+  document.getElementById("spo2Value");
+
+const bpmUpdated =
+  document.getElementById("bpmUpdated");
+
+const tempUpdated =
+  document.getElementById("tempUpdated");
+
+const spo2Updated =
+  document.getElementById("spo2Updated");
+
+const connDot =
+  document.getElementById("connDot");
+
+const connLabel =
+  document.getElementById("connLabel");
+
+
+let vitalsAttached =
+  false;
+
+
+const MIN_NORMAL = {
+  temp: 36.0,
+  bpm: 60,
+  spo2: 95
+};
+
+const SIMULATED_LOW = {
+  temp: MIN_NORMAL.temp - 20,
+  bpm: MIN_NORMAL.bpm - 20,
+  spo2: MIN_NORMAL.spo2 - 20
+};
+
+
+/* =========================================
+   ALARM STATE
+========================================= */
+
+const alertBanner =
+  document.getElementById("alertBanner");
+
+const alertReasons =
+  document.getElementById("alertReasons");
+
+const ackAlertBtn =
+  document.getElementById("ackAlertBtn");
+
+let alarmActive = false;
+let alarmAcknowledged = false;
+let alertIntervalId = null;
+
+
+function describeReasons(failing){
+
+  return failing
+    .map(f => `• ${f.label} critical: ${f.value} ${f.unit} (threshold ${f.threshold} ${f.unit})`)
+    .join("\n");
+
+}
+
+
+function sendCriticalNotification(reasonText){
+
+  if(
+    !("Notification" in window) ||
+    Notification.permission !== "granted"
+  ){
+    return;
+  }
+
+  new Notification(
+    "🚨 Critical Vitals Alert",
+    {
+      body: reasonText,
+      tag: "vitals-critical",
+      renotify: true
+    }
+  );
+
+}
+
+
+async function requestNotifyPermissionIfNeeded(){
+
+  if(!("Notification" in window)){
+    return;
+  }
+
+  if(Notification.permission === "default"){
+    await Notification.requestPermission();
+  }
+
+}
+
+
+function startAlertRepeat(reasonText){
+
+  if(alertIntervalId){
+    clearInterval(alertIntervalId);
+  }
+
+  sendCriticalNotification(reasonText);
+
+  alertIntervalId = setInterval(
+    () => {
+      sendCriticalNotification(reasonText);
+    },
+    5000
+  );
+
+}
+
+
+function stopAlertRepeat(){
+
+  if(alertIntervalId){
+    clearInterval(alertIntervalId);
+    alertIntervalId = null;
+  }
+
+}
+
+
+async function triggerOrUpdateAlarm(failing){
+
+  const reasonText =
+    describeReasons(failing);
+
+  alertReasons.textContent =
+    reasonText;
+
+  alertBanner.classList.add("active");
+
+  if(!alarmActive){
+
+    alarmActive = true;
+    alarmAcknowledged = false;
+
+    alertBanner.classList.remove("acknowledged");
+
+    await requestNotifyPermissionIfNeeded();
+
+    set(ref(db, "controls/led"), true);
+    set(ref(db, "controls/buzzer"), true);
+
+    startAlertRepeat(reasonText);
+
+  }
+  else if(!alarmAcknowledged){
+
+    stopAlertRepeat();
+    startAlertRepeat(reasonText);
+
+  }
+
+}
+
+
+function clearAlarm(){
+
+  if(!alarmActive){
+    return;
+  }
+
+  alarmActive = false;
+  alarmAcknowledged = false;
+
+  stopAlertRepeat();
+
+  alertBanner.classList.remove("active", "acknowledged");
+  alertReasons.textContent = "";
+
+  set(ref(db, "controls/led"), false);
+  set(ref(db, "controls/buzzer"), false);
+
+}
+
+
+ackAlertBtn.addEventListener(
+  "click",
+  () => {
+
+    if(!alarmActive || alarmAcknowledged){
+      return;
+    }
+
+    alarmAcknowledged = true;
+
+    stopAlertRepeat();
+
+    alertBanner.classList.add("acknowledged");
+
+    set(ref(db, "controls/buzzer"), false);
+
+  }
+);
+
+
+function evaluateVitals(data){
+
+  const failing = [];
+
+  if(data.temp !== undefined && Number(data.temp) < MIN_NORMAL.temp){
+
+    failing.push({
+      label: "Temperature",
+      value: Number(data.temp).toFixed(1),
+      unit: "°C",
+      threshold: MIN_NORMAL.temp
+    });
+
+  }
+
+  if(data.bpm !== undefined && Number(data.bpm) < MIN_NORMAL.bpm){
+
+    failing.push({
+      label: "Pulse",
+      value: Number(data.bpm),
+      unit: "bpm",
+      threshold: MIN_NORMAL.bpm
+    });
+
+  }
+
+  if(data.spo2 !== undefined && Number(data.spo2) < MIN_NORMAL.spo2){
+
+    failing.push({
+      label: "SpO2",
+      value: Number(data.spo2),
+      unit: "%",
+      threshold: MIN_NORMAL.spo2
+    });
+
+  }
+
+  if(failing.length > 0){
+    triggerOrUpdateAlarm(failing);
+  }
+  else{
+    clearAlarm();
+  }
+
+}
+
+
+
+function timeAgo(ts){
+
+  if(!ts){
+
+    return "no data yet";
+
+  }
+
+
+  const s =
+    Math.floor(
+      (Date.now() - ts) / 1000
+    );
+
+
+  if(s < 60){
+
+    return `${s}s ago`;
+
+  }
+
+
+  if(s < 3600){
+
+    return `${Math.floor(s / 60)}m ago`;
+
+  }
+
+
+  return `${Math.floor(s / 3600)}h ago`;
+
+}
+
+
+let lastRawVitals = null;
+
+const simulationOverrides = {
+  temp: null,
+  bpm: null,
+  spo2: null
+};
+
+
+function getEffectiveVitals(){
+
+  const eff = {
+    ...(lastRawVitals || {})
+  };
+
+  Object.keys(simulationOverrides).forEach(
+    key => {
+
+      if(simulationOverrides[key] !== null){
+        eff[key] = simulationOverrides[key];
+      }
+
+    }
+  );
+
+  return eff;
+
+}
+
+
+function renderVitals(){
+
+  const anySimulating =
+    Object.values(simulationOverrides).some(
+      v => v !== null
+    );
+
+  if(!lastRawVitals && !anySimulating){
+
+    connDot.className =
+      "conn-dot stale";
+
+    connLabel.textContent =
+      "No data at /vitals yet.";
+
+    return;
+
+  }
+
+  const data =
+    getEffectiveVitals();
+
+
+  bpmValue.textContent =
+    data.bpm ?? "--";
+
+
+  tempValue.textContent =
+    data.temp !== undefined
+      ? Number(data.temp).toFixed(1)
+      : "--";
+
+
+  spo2Value.textContent =
+    data.spo2 ?? "--";
+
+
+  bpmUpdated.textContent =
+    simulationOverrides.bpm !== null
+      ? "SIMULATED"
+      : timeAgo(data.timestamp);
+
+
+  tempUpdated.textContent =
+    simulationOverrides.temp !== null
+      ? "SIMULATED"
+      : timeAgo(data.timestamp);
+
+
+  spo2Updated.textContent =
+    simulationOverrides.spo2 !== null
+      ? "SIMULATED"
+      : timeAgo(data.timestamp);
+
+
+  evaluateVitals(data);
+
+
+  if(anySimulating){
+
+    connDot.className =
+      "conn-dot live";
+
+    connLabel.textContent =
+      "Simulating";
+
+    return;
+
+  }
+
+
+  const age =
+    data.timestamp
+      ? Date.now() - data.timestamp
+      : Infinity;
+
+
+  if(age < 15000){
+
+    connDot.className =
+      "conn-dot live";
+
+    connLabel.textContent =
+      "Live";
+
+  }
+
+  else{
+
+    connDot.className =
+      "conn-dot stale";
+
+    connLabel.textContent =
+      "Last reading is stale";
+
+  }
+
+}
+
+
+function attachVitalsListener(){
+
+  if(vitalsAttached){
+
+    return;
+
+  }
+
+
+  vitalsAttached =
+    true;
+
+
+  onValue(
+    ref(db, "vitals"),
+
+    (snap) => {
+
+      lastRawVitals =
+        snap.val();
+
+      renderVitals();
+
+    },
+
+    (err) => {
+
+      connDot.className =
+        "conn-dot stale";
+
+      connLabel.textContent =
+        "Database read failed — check rules/config.";
+
+      console.error(err);
+
+    }
+
+  );
+
+}
+
+
+
+/* =========================================
+   DEVICE CONTROLS
+========================================= */
+
+const buzzerToggle =
+  document.getElementById("buzzerToggle");
+
+const ledToggle =
+  document.getElementById("ledToggle");
+
+const buzzerIndicator =
+  document.getElementById("buzzerIndicator");
+
+const ledIndicator =
+  document.getElementById("ledIndicator");
+
+
+let controlsAttached =
+  false;
+
+
+
+function attachControlsListener(){
+
+  if(controlsAttached){
+
+    return;
+
+  }
+
+
+  controlsAttached =
+    true;
+
+
+  onValue(
+    ref(db, "controls"),
+
+    (snap) => {
+
+      const data =
+        snap.val() || {};
+
+
+      buzzerToggle.classList.toggle(
+        "on",
+        !!data.buzzer
+      );
+
+
+      buzzerIndicator.classList.toggle(
+        "buzzer-on",
+        !!data.buzzer
+      );
+
+
+      ledToggle.classList.toggle(
+        "on",
+        !!data.led
+      );
+
+
+      ledIndicator.classList.toggle(
+        "led-on",
+        !!data.led
+      );
+
+    }
+
+  );
+
+}
+
+
+
+buzzerToggle.addEventListener(
+  "click",
+  () => {
+
+    const next =
+      !buzzerToggle.classList.contains("on");
+
+    set(
+      ref(db, "controls/buzzer"),
+      next
+    );
+
+  }
+);
+
+
+
+ledToggle.addEventListener(
+  "click",
+  () => {
+
+    const next =
+      !ledToggle.classList.contains("on");
+
+    set(
+      ref(db, "controls/led"),
+      next
+    );
+
+  }
+);
+
+
+
+/* =========================================
+   ALARM & TIMER DUAL SYSTEM
+========================================= */
+
+const modeAlarmBtn = document.getElementById("modeAlarmBtn");
+const modeTimerBtn = document.getElementById("modeTimerBtn");
+const clockNameInput = document.getElementById("clockNameInput");
+const clockDisplay = document.getElementById("clockDisplay");
+const alarmInputs = document.getElementById("alarmInputs");
+const timerInputs = document.getElementById("timerInputs");
+const startClockBtn = document.getElementById("startClockBtn");
+const resetClockBtn = document.getElementById("resetClockBtn");
+
+const alarmHourSelect = document.getElementById("alarmHour");
+const alarmMinSelect = document.getElementById("alarmMinute");
+const alarmAmPmSelect = document.getElementById("alarmAmPm");
+
+const timerMinInput = document.getElementById("timerMinutes");
+const timerSecInput = document.getElementById("timerSeconds");
+
+let currentMode = "alarm";
+let isRunning = false;
+let clockInterval = null;
+
+let timerTotalSec = 0;
+let timerRemainingSec = 0;
+let alarmTargetTime = null;
+
+function switchMode(mode) {
+  resetClockState();
+  currentMode = mode;
+
+  if (mode === "alarm") {
+    modeAlarmBtn.classList.add("active");
+    modeTimerBtn.classList.remove("active");
+    alarmInputs.style.display = "grid";
+    timerInputs.style.display = "none";
+    startClockBtn.textContent = "Set Alarm";
+    clockNameInput.value = "Medication";
+    updateAlarmPreview();
+  } else {
+    modeTimerBtn.classList.add("active");
+    modeAlarmBtn.classList.remove("active");
+    timerInputs.style.display = "grid";
+    alarmInputs.style.display = "none";
+    startClockBtn.textContent = "Start Timer";
+    clockNameInput.value = "Timer";
+    updateTimerPreview();
+  }
+}
+
+function updateAlarmPreview() {
+  if (isRunning) return;
+  const h = String(alarmHourSelect.value).padStart(2, "0");
+  const m = String(alarmMinSelect.value).padStart(2, "0");
+  const ampm = alarmAmPmSelect.value;
+  clockDisplay.textContent = `${h}:${m} ${ampm}`;
+}
+
+function updateTimerPreview() {
+  if (isRunning) return;
+  const mins = parseInt(timerMinInput.value, 10) || 0;
+  const secs = parseInt(timerSecInput.value, 10) || 0;
+  timerTotalSec = (mins * 60) + secs;
+  timerRemainingSec = timerTotalSec;
+
+  const displayMins = Math.floor(timerRemainingSec / 60);
+  const displaySecs = timerRemainingSec % 60;
+  clockDisplay.textContent = `${String(displayMins).padStart(2, "0")}:${String(displaySecs).padStart(2, "0")}`;
+}
+
+function startClockAction() {
+  if (isRunning) {
+    clearInterval(clockInterval);
+    clockInterval = null;
+    isRunning = false;
+    startClockBtn.textContent = currentMode === "alarm" ? "Set Alarm" : "Start Timer";
+    startClockBtn.classList.remove("stop");
+    return;
+  }
+
+  if (currentMode === "alarm") {
+    let hour = Number(alarmHourSelect.value);
+    const minute = Number(alarmMinSelect.value);
+    const ampm = alarmAmPmSelect.value;
+
+    if (ampm === "AM" && hour === 12) hour = 0;
+    if (ampm === "PM" && hour !== 12) hour += 12;
+
+    const now = new Date();
+    alarmTargetTime = new Date();
+    alarmTargetTime.setHours(hour, minute, 0, 0);
+
+    if (alarmTargetTime <= now) {
+      alarmTargetTime.setDate(alarmTargetTime.getDate() + 1);
+    }
+
+    isRunning = true;
+    startClockBtn.textContent = "Cancel";
+    startClockBtn.classList.add("stop");
+
+    clockInterval = setInterval(() => {
+      const current = new Date();
+      if (alarmTargetTime - current <= 0) {
+        clearInterval(clockInterval);
+        resetClockState();
+        triggerAlert("Alarm");
+      }
+    }, 1000);
+
+  } else {
+    if (timerRemainingSec <= 0) updateTimerPreview();
+
+    if (timerRemainingSec <= 0) {
+      alert("Set valid time.");
+      return;
+    }
+
+    isRunning = true;
+    startClockBtn.textContent = "Pause";
+    startClockBtn.classList.add("stop");
+
+    clockInterval = setInterval(() => {
+      timerRemainingSec--;
+      const displayMins = Math.floor(timerRemainingSec / 60);
+      const displaySecs = timerRemainingSec % 60;
+      clockDisplay.textContent = `${String(displayMins).padStart(2, "0")}:${String(displaySecs).padStart(2, "0")}`;
+
+      if (timerRemainingSec <= 0) {
+        clearInterval(clockInterval);
+        resetClockState();
+        triggerAlert("Timer");
+      }
+    }, 1000);
+  }
+}
+
+function resetClockState() {
+  clearInterval(clockInterval);
+  clockInterval = null;
+  isRunning = false;
+  startClockBtn.classList.remove("stop");
+
+  if (currentMode === "alarm") {
+    startClockBtn.textContent = "Set Alarm";
+    updateAlarmPreview();
+  } else {
+    startClockBtn.textContent = "Start Timer";
+    updateTimerPreview();
+  }
+}
+
+function triggerAlert(type) {
+  const label = clockNameInput.value.trim() || type;
+  if ("Notification" in window && Notification.permission === "granted") {
+    new Notification(`${type}: ${label}`, { body: `${label} finished!` });
+  } else {
+    alert(`${type}: ${label}`);
+  }
+}
+
+modeAlarmBtn.addEventListener("click", () => switchMode("alarm"));
+modeTimerBtn.addEventListener("click", () => switchMode("timer"));
+
+alarmHourSelect.addEventListener("change", updateAlarmPreview);
+alarmMinSelect.addEventListener("change", updateAlarmPreview);
+alarmAmPmSelect.addEventListener("change", updateAlarmPreview);
+
+timerMinInput.addEventListener("input", updateTimerPreview);
+timerSecInput.addEventListener("input", updateTimerPreview);
+
+startClockBtn.addEventListener("click", startClockAction);
+resetClockBtn.addEventListener("click", resetClockState);
+
+updateAlarmPreview();
+
+
+
+/* =========================================
+   VITALS SIMULATOR
+========================================= */
+
+const simTempBtn =
+  document.getElementById("simTempBtn");
+
+const simPulseBtn =
+  document.getElementById("simPulseBtn");
+
+const simSpo2Btn =
+  document.getElementById("simSpo2Btn");
+
+const simButtons = {
+  temp: simTempBtn,
+  bpm: simPulseBtn,
+  spo2: simSpo2Btn
+};
+
+
+function isVitalSimulating(key){
+  return simulationOverrides[key] !== null;
+}
+
+
+function startVitalSimulation(key){
+
+  if(isVitalSimulating(key)){
+    return;
+  }
+
+  simulationOverrides[key] =
+    SIMULATED_LOW[key];
+
+  const btn = simButtons[key];
+
+  btn.classList.add("active");
+  btn.textContent = "Stop Simulation";
+
+  renderVitals();
+
+}
+
+
+function stopVitalSimulation(key){
+
+  if(!isVitalSimulating(key)){
+    return;
+  }
+
+  simulationOverrides[key] = null;
+
+  const btn = simButtons[key];
+
+  btn.classList.remove("active");
+  btn.textContent = btn.dataset.label;
+
+  renderVitals();
+
+}
+
+
+function toggleVitalSimulation(key){
+
+  if(isVitalSimulating(key)){
+    stopVitalSimulation(key);
+  }
+  else{
+    startVitalSimulation(key);
+  }
+
+}
+
+
+function stopAllVitalSimulations(){
+
+  Object.keys(simulationOverrides).forEach(
+    key => stopVitalSimulation(key)
+  );
+
+}
+
+
+simTempBtn.addEventListener(
+  "click",
+  () => {
+    toggleVitalSimulation("temp");
+  }
+);
+
+
+simPulseBtn.addEventListener(
+  "click",
+  () => {
+    toggleVitalSimulation("bpm");
+  }
+);
+
+
+simSpo2Btn.addEventListener(
+  "click",
+  () => {
+    toggleVitalSimulation("spo2");
+  }
+);
+
+
+
+
+/* =========================================
+   NOTIFICATION SYSTEM
+   ========================================= */
+
+const addNotifyBtn =
+  document.getElementById("addNotifyBtn");
+
+const saveNotifyBtn =
+  document.getElementById("saveNotifyBtn");
+
+const cancelNotifyBtn =
+  document.getElementById("cancelNotifyBtn");
+
+const notifyForm =
+  document.getElementById("notifyForm");
+
+const notifyList =
+  document.getElementById("notifyList");
+
+const notifyHour =
+  document.getElementById("notifyHour");
+
+const notifyMinute =
+  document.getElementById("notifyMinute");
+
+const notifyAmPm =
+  document.getElementById("notifyAmPm");
+
+const notifyMessage =
+  document.getElementById("notifyMessage");
+
+let scheduledNotifications = [];
+let notificationTimers = {};
+let editingNotificationId = null;
+let notificationsAttached = false;
+
+
+function attachNotificationsListener(){
+
+  if(notificationsAttached){
+    return;
+  }
+
+  notificationsAttached = true;
+
+  onValue(
+    ref(db, "notifications"),
+    (snap) => {
+
+      const data = snap.val() || {};
+
+      scheduledNotifications =
+        Object.entries(data).map(([id, item]) => ({
+          id,
+          time: item.time || "00:00",
+          message: item.message || ""
+        }));
+
+      scheduledNotifications.sort(
+        (a, b) => a.time.localeCompare(b.time)
+      );
+
+      renderNotifications();
+      scheduleAllNotifications();
+
+    },
+    (err) => {
+
+      console.error("Notification database read failed:", err);
+
+      notifyList.innerHTML =
+        '<div class="empty-notifications">Could not load notifications from Firebase.</div>';
+
+    }
+  );
+}
+
+
+addNotifyBtn.addEventListener(
+  "click",
+  () => {
+
+    editingNotificationId = null;
+
+    notifyHour.value = "12";
+    notifyMinute.value = "0";
+    notifyAmPm.value = "AM";
+    notifyMessage.value = "";
+
+    notifyForm.style.display = "block";
+    notifyMessage.focus();
+
+  }
+);
+
+
+cancelNotifyBtn.addEventListener(
+  "click",
+  () => {
+
+    editingNotificationId = null;
+    notifyForm.style.display = "none";
+
+  }
+);
+
+
+saveNotifyBtn.addEventListener(
+  "click",
+  async () => {
+
+    const message =
+      notifyMessage.value.trim();
+
+    if(!message){
+
+      alert("Please enter a notification message.");
+      return;
+
+    }
+
+    if(!auth.currentUser){
+
+      alert("Please sign in first.");
+      return;
+
+    }
+
+    if(!("Notification" in window)){
+
+      alert("This browser does not support notifications.");
+      return;
+
+    }
+
+    if(Notification.permission !== "granted"){
+
+      const permission =
+        await Notification.requestPermission();
+
+      if(permission !== "granted"){
+
+        alert("Please allow notifications in your browser.");
+        return;
+
+      }
+
+    }
+
+    let hour =
+      Number(notifyHour.value);
+
+    const minute =
+      Number(notifyMinute.value);
+
+    const ampm =
+      notifyAmPm.value;
+
+    if(ampm === "AM"){
+
+      if(hour === 12){
+        hour = 0;
+      }
+
+    }
+    else{
+
+      if(hour !== 12){
+        hour += 12;
+      }
+
+    }
+
+    const time =
+      String(hour).padStart(2,"0") +
+      ":" +
+      String(minute).padStart(2,"0");
+
+    try{
+
+      if(editingNotificationId){
+
+        await set(
+          ref(
+            db,
+            "notifications/" +
+            editingNotificationId
+          ),
+          {
+            time: time,
+            message: message
+          }
+        );
+
+      }
+      else{
+
+        const newRef =
+          push(ref(db, "notifications"));
+
+        await set(
+          newRef,
+          {
+            time: time,
+            message: message,
+            createdAt: Date.now()
+          }
+        );
+
+      }
+
+      notifyForm.style.display = "none";
+      editingNotificationId = null;
+
+    }
+    catch(err){
+
+      console.error("Could not save notification:", err);
+
+      alert(
+        "Could not save notification to Firebase. Check your Database Rules."
+      );
+
+    }
+
+  }
+);
+
+
+function formatTime(time){
+
+  const parts =
+    time.split(":");
+
+  let hour =
+    Number(parts[0]);
+
+  const minute =
+    parts[1];
+
+  const ampm =
+    hour >= 12 ? "PM" : "AM";
+
+  hour =
+    hour % 12;
+
+  if(hour === 0){
+    hour = 12;
+  }
+
+  return (
+    String(hour).padStart(2,"0") +
+    ":" +
+    minute +
+    " " +
+    ampm
+  );
+
+}
+
+
+function renderNotifications(){
+
+  notifyList.innerHTML = "";
+
+  if(scheduledNotifications.length === 0){
+
+    notifyList.innerHTML =
+      '<div class="empty-notifications">No notifications scheduled.</div>';
+
+    return;
+
+  }
+
+  scheduledNotifications.forEach(
+    item => {
+
+      const row =
+        document.createElement("div");
+
+      row.className =
+        "notify-item";
+
+      const info =
+        document.createElement("div");
+
+      info.className =
+        "notify-info";
+
+      const time =
+        document.createElement("div");
+
+      time.className =
+        "notify-time";
+
+      time.textContent =
+        formatTime(item.time);
+
+      const message =
+        document.createElement("div");
+
+      message.className =
+        "notify-message-display";
+
+      message.textContent =
+        item.message;
+
+      info.appendChild(time);
+      info.appendChild(message);
+
+      const actions =
+        document.createElement("div");
+
+      actions.className =
+        "notify-actions";
+
+      const edit =
+        document.createElement("button");
+
+      edit.className =
+        "notify-edit";
+
+      edit.textContent =
+        "Edit";
+
+      edit.addEventListener(
+        "click",
+        () => {
+          editNotification(item.id);
+        }
+      );
+
+      const removeBtn =
+        document.createElement("button");
+
+      removeBtn.className =
+        "notify-delete";
+
+      removeBtn.textContent =
+        "Delete";
+
+      removeBtn.addEventListener(
+        "click",
+        () => {
+          deleteNotification(item.id);
+        }
+      );
+
+      actions.appendChild(edit);
+      actions.appendChild(removeBtn);
+
+      row.appendChild(info);
+      row.appendChild(actions);
+
+      notifyList.appendChild(row);
+
+    }
+  );
+
+}
+
+
+function editNotification(id){
+
+  const item =
+    scheduledNotifications.find(
+      n => n.id === id
+    );
+
+  if(!item){
+    return;
+  }
+
+  editingNotificationId =
+    id;
+
+  const parts =
+    item.time.split(":");
+
+  let hour =
+    Number(parts[0]);
+
+  const minute =
+    Number(parts[1]);
+
+  const ampm =
+    hour >= 12 ? "PM" : "AM";
+
+  hour =
+    hour % 12;
+
+  if(hour === 0){
+    hour = 12;
+  }
+
+  notifyHour.value =
+    String(hour);
+
+  notifyMinute.value =
+    String(minute);
+
+  notifyAmPm.value =
+    ampm;
+
+  notifyMessage.value =
+    item.message;
+
+  notifyForm.style.display =
+    "block";
+
+  notifyMessage.focus();
+
+}
+
+
+async function deleteNotification(id){
+
+  const ok =
+    confirm("Delete this notification?");
+
+  if(!ok){
+    return;
+  }
+
+  try{
+
+    clearTimeout(
+      notificationTimers[id]
+    );
+
+    delete notificationTimers[id];
+
+    await remove(
+      ref(
+        db,
+        "notifications/" + id
+      )
+    );
+
+  }
+  catch(err){
+
+    console.error(
+      "Could not delete notification:",
+      err
+    );
+
+    alert(
+      "Could not delete notification from Firebase."
+    );
+
+  }
+
+}
+
+
+function scheduleAllNotifications(){
+
+  Object.values(
+    notificationTimers
+  ).forEach(
+    timer => {
+      clearTimeout(timer);
+    }
+  );
+
+  notificationTimers = {};
+
+  scheduledNotifications.forEach(
+    item => {
+      scheduleNotification(item);
+    }
+  );
+
+}
+
+
+function scheduleNotification(item){
+
+  if (notificationTimers[item.id]) {
+    clearTimeout(notificationTimers[item.id]);
+    delete notificationTimers[item.id];
+  }
+
+  const now =
+    new Date();
+
+  const parts =
+    item.time.split(":");
+
+  const hour =
+    Number(parts[0]);
+
+  const minute =
+    Number(parts[1]);
+
+  const target =
+    new Date();
+
+  target.setHours(
+    hour,
+    minute,
+    0,
+    0
+  );
+
+  if(target.getTime() <= now.getTime()){
+
+    target.setDate(
+      target.getDate() + 1
+    );
+
+  }
+
+  const delay =
+    target.getTime() -
+    now.getTime();
+
+  const maxDelay =
+    2147483647;
+
+  if(delay > maxDelay){
+
+    notificationTimers[item.id] =
+      setTimeout(
+        () => {
+          scheduleNotification(item);
+        },
+        maxDelay
+      );
+
+    return;
+
+  }
+
+  notificationTimers[item.id] =
+    setTimeout(
+      () => {
+
+        showNotification(item);
+
+        scheduleNotification(item);
+
+      },
+      delay
+    );
+
+}
+
+
+function showNotification(item){
+
+  if(
+    Notification.permission !==
+    "granted"
+  ){
+    return;
+  }
+
+  new Notification(
+    "Vitals Monitor",
+    {
+      body: item.message
+    }
+  );
+
+}
+
+
+renderNotifications();
+
+</script>
+
+</body>
+</html>
