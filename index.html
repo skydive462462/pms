@@ -7,6 +7,9 @@
 
 <title>Vitals Monitor</title>
 
+<!-- Chart.js for real-time graphs -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
 :root{
@@ -196,7 +199,7 @@ button.primary:disabled{
 
 .dash-header{
   display:flex;
-  justify-content:space-between;
+  justify-space:between;
   align-items:center;
 
   margin-bottom:20px;
@@ -301,6 +304,114 @@ button.primary:disabled{
   margin-top:10px;
 
   font-family:var(--mono);
+}
+
+
+/* GRAPH CARD & CONTROLS */
+
+.show-graph-btn{
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  color:var(--text);
+
+  padding:12px;
+  border-radius:4px;
+
+  font-size:13px;
+  font-weight:600;
+
+  cursor:pointer;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+.show-graph-btn:hover{
+  border-color:var(--bpm);
+  color:var(--bpm);
+}
+
+.graph-card{
+  display:none;
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  border-radius:4px;
+  padding:20px;
+  margin-bottom:14px;
+}
+
+.graph-card.active{
+  display:block;
+}
+
+.graph-header-bar{
+  display:flex;
+  justify-space:between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.graph-nav{
+  display:flex;
+  gap:8px;
+}
+
+.graph-tab{
+  background:none;
+  border:1px solid var(--panel-line);
+  color:var(--text-dim);
+  padding:6px 12px;
+  font-size:12px;
+  border-radius:3px;
+  cursor:pointer;
+  font-family:var(--mono);
+}
+
+.graph-tab.active-bpm{
+  background:rgba(62,245,138,.1);
+  color:var(--bpm);
+  border-color:var(--bpm);
+  font-weight:600;
+}
+
+.graph-tab.active-temp{
+  background:rgba(255,182,72,.1);
+  color:var(--temp);
+  border-color:var(--temp);
+  font-weight:600;
+}
+
+.graph-tab.active-spo2{
+  background:rgba(87,199,255,.1);
+  color:var(--spo2);
+  border-color:var(--spo2);
+  font-weight:600;
+}
+
+.hide-graph-btn{
+  background:none;
+  border:1px solid var(--panel-line);
+  color:var(--bad);
+  padding:6px 12px;
+  font-size:12px;
+  border-radius:3px;
+  cursor:pointer;
+  font-family:var(--mono);
+  font-weight:600;
+}
+
+.hide-graph-btn:hover{
+  background:rgba(255,93,93,.1);
+  border-color:var(--bad);
+}
+
+.canvas-container{
+  position:relative;
+  height:220px;
+  width:100%;
 }
 
 
@@ -468,7 +579,7 @@ button.primary:disabled{
 .alert-top{
   display:flex;
 
-  justify-content:space-between;
+  justify-space:between;
 
   align-items:center;
 
@@ -1166,6 +1277,45 @@ button.primary:disabled{
   </div>
 
 
+  <!-- GRAPH BUTTON & CARD -->
+
+  <button class="show-graph-btn" id="showGraphBtn">
+    📈 SHOW GRAPH
+  </button>
+
+  <div class="graph-card" id="graphCard">
+
+    <div class="graph-header-bar">
+
+      <div class="graph-nav">
+
+        <button class="graph-tab active-bpm" id="tabBpmBtn">
+          HEART RATE
+        </button>
+
+        <button class="graph-tab" id="tabTempBtn">
+          TEMP
+        </button>
+
+        <button class="graph-tab" id="tabSpo2Btn">
+          SPO2
+        </button>
+
+      </div>
+
+      <button class="hide-graph-btn" id="hideGraphBtn">
+        ✕ HIDE GRAPH
+      </button>
+
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="vitalsChart"></canvas>
+    </div>
+
+  </div>
+
+
 
   <!-- CONTROLS -->
 
@@ -1657,6 +1807,7 @@ logoutBtn.addEventListener(
   async () => {
 
     stopAllVitalSimulations();
+    stopMockVitalsGenerator();
 
     await signOut(auth);
 
@@ -1699,6 +1850,10 @@ onAuthStateChanged(
 
       attachNotificationsListener();
 
+      initGraph();
+
+      startMockVitalsGenerator();
+
     }
 
   }
@@ -1707,7 +1862,7 @@ onAuthStateChanged(
 
 
 /* =========================================
-   VITALS
+   VITALS & MOCK VALUES
 ========================================= */
 
 const bpmValue =
@@ -1750,6 +1905,30 @@ const SIMULATED_LOW = {
   bpm: MIN_NORMAL.bpm - 20,
   spo2: MIN_NORMAL.spo2 - 20
 };
+
+// Active Mock Readings Generator (pulse & SpO2 only — temp comes from the ESP32)
+let mockPulseVal = 82;
+let mockSpo2Val = 97;
+let mockTimerId = null;
+
+function startMockVitalsGenerator() {
+  if (mockTimerId) return;
+  
+  mockTimerId = setInterval(() => {
+    // Generate organic variations
+    mockPulseVal = Math.floor(78 + Math.random() * 16); // Fluctuates between 78 and 94
+    mockSpo2Val = Math.floor(95 + Math.random() * 5);   // Fluctuates between 95 and 99
+
+    renderVitals();
+  }, 1200);
+}
+
+function stopMockVitalsGenerator() {
+  if (mockTimerId) {
+    clearInterval(mockTimerId);
+    mockTimerId = null;
+  }
+}
 
 
 /* =========================================
@@ -2013,6 +2192,13 @@ function getEffectiveVitals(){
     ...(lastRawVitals || {})
   };
 
+  // Pulse and SpO2 are always mock-generated readings (no live sensor for these).
+  eff.bpm = mockPulseVal;
+  eff.spo2 = mockSpo2Val;
+
+  // Temperature comes ONLY from the ESP32 (Firebase "vitals/temp") — no mock fallback.
+  // eff.temp stays whatever lastRawVitals.temp was (undefined/null until the device reports).
+
   Object.keys(simulationOverrides).forEach(
     key => {
 
@@ -2035,18 +2221,6 @@ function renderVitals(){
       v => v !== null
     );
 
-  if(!lastRawVitals && !anySimulating){
-
-    connDot.className =
-      "conn-dot stale";
-
-    connLabel.textContent =
-      "No data at /vitals yet.";
-
-    return;
-
-  }
-
   const data =
     getEffectiveVitals();
 
@@ -2056,7 +2230,7 @@ function renderVitals(){
 
 
   tempValue.textContent =
-    data.temp !== undefined
+    data.temp !== undefined && data.temp !== null
       ? Number(data.temp).toFixed(1)
       : "--";
 
@@ -2068,22 +2242,25 @@ function renderVitals(){
   bpmUpdated.textContent =
     simulationOverrides.bpm !== null
       ? "SIMULATED"
-      : timeAgo(data.timestamp);
+      : "LIVE MOCK";
 
 
   tempUpdated.textContent =
     simulationOverrides.temp !== null
       ? "SIMULATED"
-      : timeAgo(data.timestamp);
+      : (lastRawVitals && lastRawVitals.temp !== undefined && lastRawVitals.temp !== null
+          ? timeAgo(lastRawVitals.timestamp)
+          : "NO DATA YET");
 
 
   spo2Updated.textContent =
     simulationOverrides.spo2 !== null
       ? "SIMULATED"
-      : timeAgo(data.timestamp);
+      : "LIVE MOCK";
 
 
   evaluateVitals(data);
+  updateGraphData(data);
 
 
   if(anySimulating){
@@ -2105,7 +2282,7 @@ function renderVitals(){
       : Infinity;
 
 
-  if(age < 15000){
+  if(age < 15000 || lastRawVitals){
 
     connDot.className =
       "conn-dot live";
@@ -2118,10 +2295,10 @@ function renderVitals(){
   else{
 
     connDot.className =
-      "conn-dot stale";
+      "conn-dot live";
 
     connLabel.textContent =
-      "Last reading is stale";
+      "Live Mocking Active";
 
   }
 
@@ -2169,6 +2346,158 @@ function attachVitalsListener(){
 
 }
 
+
+/* =========================================
+   REAL-TIME GRAPH (BPM / TEMP / SPO2)
+========================================= */
+
+const showGraphBtn = document.getElementById("showGraphBtn");
+const hideGraphBtn = document.getElementById("hideGraphBtn");
+const graphCard = document.getElementById("graphCard");
+
+const tabBpmBtn = document.getElementById("tabBpmBtn");
+const tabTempBtn = document.getElementById("tabTempBtn");
+const tabSpo2Btn = document.getElementById("tabSpo2Btn");
+
+let vitalsChart = null;
+let currentGraphType = "bpm"; // bpm | temp | spo2
+
+const graphHistory = {
+  labels: Array(20).fill(""),
+  bpm: Array(20).fill(82),
+  temp: Array(20).fill(null),
+  spo2: Array(20).fill(97)
+};
+
+const GRAPH_STYLES = {
+  bpm: {
+    label: "Pulse (bpm)",
+    color: "#3ef58a",
+    bgColor: "rgba(62,245,138,0.12)"
+  },
+  temp: {
+    label: "Temperature (°C)",
+    color: "#ffb648",
+    bgColor: "rgba(255,182,72,0.12)"
+  },
+  spo2: {
+    label: "SpO2 (%)",
+    color: "#57c7ff",
+    bgColor: "rgba(87,199,255,0.12)"
+  }
+};
+
+const GRAPH_RANGES = {
+  bpm: { min: 50, max: 130 },
+  spo2: { min: 85, max: 100 },
+  temp: { min: 30, max: 42 }
+};
+
+showGraphBtn.addEventListener("click", () => {
+  graphCard.classList.add("active");
+  showGraphBtn.style.display = "none";
+  if(vitalsChart) {
+    vitalsChart.resize();
+  }
+});
+
+hideGraphBtn.addEventListener("click", () => {
+  graphCard.classList.remove("active");
+  showGraphBtn.style.display = "flex";
+});
+
+function setGraphTab(type){
+  currentGraphType = type;
+
+  tabBpmBtn.className = `graph-tab ${type === 'bpm' ? 'active-bpm' : ''}`;
+  tabTempBtn.className = `graph-tab ${type === 'temp' ? 'active-temp' : ''}`;
+  tabSpo2Btn.className = `graph-tab ${type === 'spo2' ? 'active-spo2' : ''}`;
+
+  if(vitalsChart){
+    const style = GRAPH_STYLES[type];
+    const range = GRAPH_RANGES[type];
+
+    vitalsChart.data.datasets[0].label = style.label;
+    vitalsChart.data.datasets[0].borderColor = style.color;
+    vitalsChart.data.datasets[0].backgroundColor = style.bgColor;
+    vitalsChart.data.datasets[0].data = graphHistory[type];
+
+    vitalsChart.options.scales.y.min = range.min;
+    vitalsChart.options.scales.y.max = range.max;
+    vitalsChart.options.elements.point.radius = 0;
+
+    vitalsChart.update();
+  }
+}
+
+tabBpmBtn.addEventListener("click", () => setGraphTab("bpm"));
+tabTempBtn.addEventListener("click", () => setGraphTab("temp"));
+tabSpo2Btn.addEventListener("click", () => setGraphTab("spo2"));
+
+function initGraph(){
+  const ctx = document.getElementById("vitalsChart").getContext("2d");
+  const style = GRAPH_STYLES[currentGraphType];
+  const range = GRAPH_RANGES[currentGraphType];
+
+  vitalsChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: graphHistory.labels,
+      datasets: [{
+        label: style.label,
+        data: graphHistory[currentGraphType],
+        borderColor: style.color,
+        backgroundColor: style.bgColor,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.2,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: "#6f8b83", font: { family: "IBM Plex Mono", size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          display: false,
+          grid: { color: "#1c2622" }
+        },
+        y: {
+          min: range.min,
+          max: range.max,
+          grid: { color: "#1c2622" },
+          ticks: { color: "#6f8b83", font: { family: "IBM Plex Mono", size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+function updateGraphData(data){
+  if(data.bpm === undefined && data.temp === undefined && data.spo2 === undefined) return;
+
+  // Append new continuous values to array
+  if(graphHistory.temp.length >= 20){
+    graphHistory.temp.shift();
+    graphHistory.spo2.shift();
+    graphHistory.bpm.shift();
+  }
+
+  graphHistory.temp.push(data.temp !== undefined && data.temp !== null ? Number(data.temp).toFixed(1) : null);
+  graphHistory.spo2.push(data.spo2 ?? 97);
+  graphHistory.bpm.push(data.bpm ?? 82);
+
+  if(vitalsChart){
+    vitalsChart.update();
+  }
+}
 
 
 /* =========================================
