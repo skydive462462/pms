@@ -1092,15 +1092,15 @@ button.primary:disabled{
 
     <div class="field">
 
-      <label for="username">
-        Username
+      <label for="email">
+        Email
       </label>
 
       <input
-        type="text"
-        id="username"
+        type="email"
+        id="email"
         autocomplete="username"
-        placeholder="Username"
+        placeholder="you@example.com"
       />
 
     </div>
@@ -1623,7 +1623,7 @@ from
 
 import {
   getAuth,
-  signInAnonymously,
+  signInWithEmailAndPassword,
   onAuthStateChanged,
   signOut
 }
@@ -1651,19 +1651,28 @@ from
 const firebaseConfig = {
 
   apiKey:
-    "AIzaSyDM5_3qmJVfWc9kF6qHBf4ojWbym4PyX4A",
+    "AIzaSyCGOOMCav0We0qowk-9NBDSWzYn0rrPzKo",
 
   authDomain:
-    "netvital.firebaseapp.com",
+    "securityfix-1e746.firebaseapp.com",
 
   databaseURL:
-    "https://netvital-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    "https://securityfix-1e746-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  // ⚠️ REPLACE the line above: go to Realtime Database in the Firebase
+  // console, create the database if you haven't, then copy the URL shown
+  // at the top of the Data tab and paste it here exactly.
 
   projectId:
-    "netvital",
+    "securityfix-1e746",
+
+  storageBucket:
+    "securityfix-1e746.firebasestorage.app",
+
+  messagingSenderId:
+    "312289265846",
 
   appId:
-    "1:305975124083:web:b9f5ec7adc1497766d0a06"
+    "1:312289265846:web:819676da7008d15546fe17"
 
 };
 
@@ -1686,21 +1695,14 @@ const db =
    LOGIN
 ========================================= */
 
-const MOCK_USERNAME =
-  "patient_vital";
-
-const MOCK_PASSWORD =
-  "iotwork462";
-
-
 const authWrap =
   document.getElementById("authWrap");
 
 const dashWrap =
   document.getElementById("dashWrap");
 
-const usernameInput =
-  document.getElementById("username");
+const emailInput =
+  document.getElementById("email");
 
 const passwordInput =
   document.getElementById("password");
@@ -1739,28 +1741,23 @@ passwordInput.addEventListener(
 
 async function handleLogin(){
 
-  const u =
-    usernameInput.value.trim();
+  const email =
+    emailInput.value.trim();
 
   const p =
     passwordInput.value;
 
-
-  if (
-    u !== MOCK_USERNAME ||
-    p !== MOCK_PASSWORD
-  ){
+  if (!email || !p){
 
     result.style.display =
       "block";
 
     result.textContent =
-      "✘ Incorrect username or password.";
+      "✘ Please enter both email and password.";
 
     return;
 
   }
-
 
   result.style.display =
     "none";
@@ -1771,7 +1768,7 @@ async function handleLogin(){
 
   try{
 
-    await signInAnonymously(auth);
+    await signInWithEmailAndPassword(auth, email, p);
 
   }
 
@@ -1780,8 +1777,21 @@ async function handleLogin(){
     result.style.display =
       "block";
 
-    result.textContent =
-      "Could not connect to the database. Check your Firebase config.";
+    if(
+      err.code === "auth/invalid-credential" ||
+      err.code === "auth/wrong-password" ||
+      err.code === "auth/user-not-found" ||
+      err.code === "auth/invalid-email"
+    ){
+      result.textContent =
+        "✘ Incorrect email or password.";
+    } else if (err.code === "auth/too-many-requests"){
+      result.textContent =
+        "✘ Too many attempts. Please wait and try again.";
+    } else {
+      result.textContent =
+        "Could not sign in. Check your Firebase config.";
+    }
 
     console.error(err);
 
@@ -1817,7 +1827,7 @@ logoutBtn.addEventListener(
     authWrap.style.display =
       "block";
 
-    usernameInput.value =
+    emailInput.value =
       "";
 
     passwordInput.value =
