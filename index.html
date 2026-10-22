@@ -1,0 +1,3684 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Vitals Monitor</title>
+
+<!-- Chart.js for real-time graphs -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+:root{
+  --bg:#050706;
+  --panel:#0c1210;
+  --panel-line:#1c2622;
+  --text:#dce7e2;
+  --text-dim:#6f8b83;
+  --bpm:#3ef58a;
+  --temp:#ffb648;
+  --spo2:#57c7ff;
+  --bad:#ff5d5d;
+  --off:#2a3530;
+
+  --mono:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  height:100%;
+  margin:0;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:24px;
+}
+
+.wrap{
+  width:100%;
+  max-width:380px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:28px;
+}
+
+.brand-mark{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--bpm);
+
+  box-shadow:0 0 8px var(--bpm);
+
+  animation:pulse 1.4s infinite ease-in-out;
+}
+
+@keyframes pulse{
+  0%,100%{
+    opacity:1;
+  }
+
+  50%{
+    opacity:.35;
+  }
+}
+
+.brand-name{
+  font-family:var(--mono);
+  font-size:14px;
+  letter-spacing:.04em;
+  color:var(--text-dim);
+}
+
+.card{
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  border-radius:4px;
+  padding:28px;
+}
+
+.card h1{
+  font-size:20px;
+  margin:0 0 4px;
+  font-weight:600;
+}
+
+.card p.sub{
+  margin:0 0 24px;
+  color:var(--text-dim);
+  font-size:13px;
+  line-height:1.5;
+}
+
+label{
+  display:block;
+  font-size:12px;
+  color:var(--text-dim);
+  margin-bottom:6px;
+}
+
+.field{
+  margin-bottom:16px;
+}
+
+input, select{
+  width:100%;
+  background:#060a09;
+  border:1px solid var(--panel-line);
+  color:var(--text);
+
+  border-radius:3px;
+  padding:10px 12px;
+
+  font-size:14px;
+  font-family:var(--sans);
+}
+
+input:focus, select:focus{
+  outline:none;
+  border-color:var(--bpm);
+}
+
+button.primary{
+  width:100%;
+  background:var(--bpm);
+  color:#04140a;
+
+  border:none;
+  border-radius:3px;
+
+  padding:11px 12px;
+
+  font-size:14px;
+  font-weight:600;
+
+  cursor:pointer;
+  margin-top:6px;
+}
+
+button.primary:hover{
+  filter:brightness(1.08);
+}
+
+button.primary:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.result{
+  margin-top:18px;
+  padding:12px 14px;
+
+  border-radius:3px;
+
+  font-size:13.5px;
+
+  font-family:var(--mono);
+
+  display:none;
+}
+
+.result.bad{
+  display:block;
+
+  background:rgba(255,93,93,.08);
+  border:1px solid rgba(255,93,93,.4);
+
+  color:var(--bad);
+}
+
+
+/* DASHBOARD */
+
+.dash-wrap{
+  display:none;
+
+  width:100%;
+  max-width:560px;
+}
+
+.dash-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+
+  margin-bottom:20px;
+}
+
+.dash-header .who{
+  font-size:12.5px;
+  color:var(--text-dim);
+}
+
+.dash-header .who span{
+  color:var(--text);
+}
+
+.logout-btn{
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  font-size:12px;
+
+  padding:6px 12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+}
+
+.logout-btn:hover{
+  color:var(--text);
+  border-color:var(--text-dim);
+}
+
+
+/* VITALS */
+
+.vitals-grid{
+  display:grid;
+
+  grid-template-columns:1fr 1fr 1fr;
+
+  gap:14px;
+
+  margin-bottom:14px;
+}
+
+.vital-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+}
+
+.vital-label{
+  font-size:11.5px;
+
+  color:var(--text-dim);
+
+  margin-bottom:10px;
+}
+
+.vital-value{
+  font-family:var(--mono);
+
+  font-size:40px;
+
+  line-height:1;
+
+  font-weight:500;
+}
+
+.vital-value .unit{
+  font-size:16px;
+
+  color:var(--text-dim);
+
+  margin-left:4px;
+}
+
+.vital-value.bpm{
+  color:var(--bpm);
+}
+
+.vital-value.temp{
+  color:var(--temp);
+}
+
+.vital-value.spo2{
+  color:var(--spo2);
+}
+
+.vital-updated{
+  font-size:11px;
+
+  color:var(--text-dim);
+
+  margin-top:10px;
+
+  font-family:var(--mono);
+}
+
+
+/* GRAPH CARD & CONTROLS */
+
+.show-graph-btn{
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  color:var(--text);
+
+  padding:12px;
+  border-radius:4px;
+
+  font-size:13px;
+  font-weight:600;
+
+  cursor:pointer;
+  margin-bottom:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+.show-graph-btn:hover{
+  border-color:var(--bpm);
+  color:var(--bpm);
+}
+
+.graph-card{
+  display:none;
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  border-radius:4px;
+  padding:20px;
+  margin-bottom:14px;
+}
+
+.graph-card.active{
+  display:block;
+}
+
+.graph-header-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.graph-nav{
+  display:flex;
+  gap:8px;
+}
+
+.graph-tab{
+  background:none;
+  border:1px solid var(--panel-line);
+  color:var(--text-dim);
+  padding:6px 12px;
+  font-size:12px;
+  border-radius:3px;
+  cursor:pointer;
+  font-family:var(--mono);
+}
+
+.graph-tab.active-bpm{
+  background:rgba(62,245,138,.1);
+  color:var(--bpm);
+  border-color:var(--bpm);
+  font-weight:600;
+}
+
+.graph-tab.active-temp{
+  background:rgba(255,182,72,.1);
+  color:var(--temp);
+  border-color:var(--temp);
+  font-weight:600;
+}
+
+.graph-tab.active-spo2{
+  background:rgba(87,199,255,.1);
+  color:var(--spo2);
+  border-color:var(--spo2);
+  font-weight:600;
+}
+
+.hide-graph-btn{
+  background:none;
+  border:1px solid var(--panel-line);
+  color:var(--bad);
+  padding:6px 12px;
+  font-size:12px;
+  border-radius:3px;
+  cursor:pointer;
+  font-family:var(--mono);
+  font-weight:600;
+}
+
+.hide-graph-btn:hover{
+  background:rgba(255,93,93,.1);
+  border-color:var(--bad);
+}
+
+.canvas-container{
+  position:relative;
+  height:220px;
+  width:100%;
+}
+
+
+/* SECTION TITLES (shared by simulator card) */
+
+.controls-title{
+  font-size:11.5px;
+
+  color:var(--text-dim);
+
+  margin-bottom:16px;
+}
+
+
+/* =========================================
+   VITALS SIMULATOR
+========================================= */
+
+.sim-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+
+  margin-top:14px;
+}
+
+.sim-buttons{
+  display:grid;
+
+  grid-template-columns:1fr 1fr 1fr;
+
+  gap:10px;
+
+  margin-bottom:10px;
+}
+
+.sim-btn{
+  background:#1a1010;
+
+  border:1px solid rgba(255,93,93,.4);
+
+  color:var(--bad);
+
+  border-radius:3px;
+
+  padding:10px 8px;
+
+  font-size:12.5px;
+
+  font-weight:600;
+
+  cursor:pointer;
+}
+
+.sim-btn:hover{
+  background:rgba(255,93,93,.12);
+}
+
+.sim-btn.active{
+  background:var(--bad);
+
+  border-color:var(--bad);
+
+  color:#2b0a0a;
+
+  animation:simPulse 1s infinite;
+}
+
+@keyframes simPulse{
+  0%,100%{
+    opacity:1;
+  }
+
+  50%{
+    opacity:.65;
+  }
+}
+
+/* =========================================
+   ACKNOWLEDGE
+========================================= */
+
+.ack-btn{
+  display:none;
+
+  width:100%;
+
+  background:var(--bad);
+
+  border:1px solid var(--bad);
+
+  color:#2b0a0a;
+
+  border-radius:4px;
+
+  padding:12px;
+
+  font-size:13px;
+
+  font-weight:600;
+
+  cursor:pointer;
+
+  margin-bottom:14px;
+
+  animation:simPulse 1s infinite;
+}
+
+.ack-badge{
+  display:none;
+
+  text-align:center;
+
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  border-radius:4px;
+
+  padding:12px;
+
+  font-size:13px;
+
+  font-weight:600;
+
+  margin-bottom:14px;
+}
+
+.sim-reset-btn{
+  width:100%;
+
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  border-radius:3px;
+
+  padding:9px 8px;
+
+  font-size:12.5px;
+
+  cursor:pointer;
+}
+
+.sim-reset-btn:hover{
+  color:var(--text);
+
+  border-color:var(--text-dim);
+}
+
+
+/* =========================================
+   REMINDERS SECTION
+========================================= */
+
+.notify-card{
+  background:var(--panel);
+
+  border:1px solid var(--panel-line);
+
+  border-radius:4px;
+
+  padding:20px;
+
+  margin-top:14px;
+}
+
+.notify-header{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  margin-bottom:15px;
+}
+
+.notify-title{
+  font-size:11.5px;
+
+  color:var(--text-dim);
+
+  letter-spacing:.04em;
+}
+
+.add-notify{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  border:none;
+
+  padding:6px 12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+
+  font-weight:600;
+
+  font-size:12px;
+}
+
+.add-notify:hover{
+  filter:brightness(1.08);
+}
+
+.notify-form{
+  display:none;
+
+  border-top:1px solid var(--panel-line);
+
+  padding-top:15px;
+
+  margin-bottom:10px;
+}
+
+.mode-selector{
+  display:flex;
+
+  gap:6px;
+
+  margin-bottom:12px;
+}
+
+.type-mode-btn{
+  flex:1;
+
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  padding:6px;
+
+  font-size:12px;
+
+  border-radius:3px;
+
+  cursor:pointer;
+}
+
+.type-mode-btn.active{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  border-color:var(--bpm);
+
+  font-weight:600;
+}
+
+.time-row{
+  display:grid;
+
+  grid-template-columns:1fr 1fr 1fr;
+
+  gap:6px;
+
+  margin-bottom:10px;
+}
+
+.timer-row{
+  display:grid;
+
+  grid-template-columns:1fr 1fr;
+
+  gap:6px;
+
+  margin-bottom:10px;
+}
+
+.notify-message{
+  width:100%;
+
+  font-size:13.5px;
+}
+
+.notify-save,
+.notify-cancel{
+  margin-top:10px;
+
+  padding:8px 12px;
+
+  border:none;
+
+  border-radius:3px;
+
+  cursor:pointer;
+
+  font-size:12.5px;
+}
+
+.notify-save{
+  background:var(--bpm);
+
+  color:#04140a;
+
+  font-weight:600;
+}
+
+.notify-cancel{
+  background:var(--off);
+
+  color:var(--text);
+
+  margin-left:6px;
+}
+
+.notify-item{
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  gap:10px;
+
+  padding:12px 0;
+
+  border-top:1px solid var(--panel-line);
+}
+
+.notify-info{
+  flex:1;
+}
+
+.notify-time-wrap{
+  display:flex;
+
+  align-items:center;
+
+  gap:8px;
+}
+
+.notify-time{
+  font-family:var(--mono);
+
+  color:var(--bpm);
+
+  font-size:15px;
+}
+
+.notify-time.timer-mode{
+  color:var(--spo2);
+}
+
+.badge-type{
+  font-size:10px;
+
+  padding:2px 5px;
+
+  border-radius:2px;
+
+  background:var(--off);
+
+  color:var(--text-dim);
+
+  text-transform:uppercase;
+
+  font-family:var(--mono);
+}
+
+.notify-message-display{
+  color:var(--text-dim);
+
+  font-size:12px;
+
+  margin-top:4px;
+}
+
+.notify-actions{
+  display:flex;
+
+  gap:5px;
+}
+
+.notify-edit,
+.notify-delete{
+  background:none;
+
+  border:1px solid var(--panel-line);
+
+  color:var(--text-dim);
+
+  padding:5px 8px;
+
+  cursor:pointer;
+
+  border-radius:3px;
+
+  font-size:11.5px;
+}
+
+.notify-edit:hover{
+  color:var(--bpm);
+
+  border-color:var(--bpm);
+}
+
+.notify-delete:hover{
+  color:var(--bad);
+
+  border-color:var(--bad);
+}
+
+.empty-notifications{
+  color:var(--text-dim);
+
+  font-size:12px;
+
+  padding-top:5px;
+}
+
+
+/* CONNECTION */
+
+.conn-status{
+  display:flex;
+
+  align-items:center;
+
+  gap:7px;
+
+  font-size:12px;
+
+  color:var(--text-dim);
+
+  margin-top:16px;
+}
+
+.conn-meta{
+  display:flex;
+
+  flex-wrap:wrap;
+
+  gap:10px;
+
+  font-size:11px;
+
+  font-family:var(--mono);
+
+  color:var(--text-dim);
+
+  margin-top:6px;
+}
+
+.conn-dot{
+  width:7px;
+  height:7px;
+
+  border-radius:50%;
+
+  background:var(--text-dim);
+}
+
+.conn-dot.live{
+  background:var(--bpm);
+
+  box-shadow:0 0 6px var(--bpm);
+}
+
+.conn-dot.stale{
+  background:var(--bad);
+}
+
+
+/* CAMERA (emergency image) */
+
+.show-img-btn{
+  display:none;
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--bad);
+  color:var(--bad);
+  border-radius:4px;
+  padding:12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:12px;
+  animation:simPulse 1s infinite;
+}
+
+.cam-img-box{
+  display:none;
+  margin-top:12px;
+  background:#000;
+  border-radius:3px;
+  overflow:hidden;
+}
+
+.cam-img-box img{
+  width:100%;
+  display:block;
+}
+
+.req-photo-btn{
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--panel-line);
+  color:var(--text);
+  border-radius:4px;
+  padding:12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:12px;
+}
+
+.req-photo-btn:hover{
+  border-color:var(--bpm);
+  color:var(--bpm);
+}
+
+.clear-all-btn{
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--bad);
+  color:var(--bad);
+  border-radius:4px;
+  padding:12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:12px;
+}
+
+.clear-all-btn:hover{
+  background:rgba(255,93,93,.12);
+}
+
+.med-banner{
+  display:none;
+  background:rgba(255,182,72,.12);
+  border:1px solid var(--temp);
+  color:var(--temp);
+  border-radius:4px;
+  padding:12px 14px;
+  margin-bottom:14px;
+  font-size:13.5px;
+  font-weight:600;
+  animation:simPulse 1s infinite;
+}
+
+.cam-link{
+  color:var(--spo2);
+}
+
+
+/* MOBILE */
+
+@media(max-width:420px){
+
+  .vitals-grid{
+    grid-template-columns:1fr;
+  }
+
+  .sim-buttons{
+    grid-template-columns:1fr;
+  }
+
+  .notify-item{
+    align-items:flex-start;
+  }
+
+  .notify-actions{
+    flex-direction:column;
+  }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =========================================
+     LOGIN
+========================================= -->
+
+<div id="authWrap" class="wrap">
+
+  <div class="brand">
+
+    <div class="brand-mark"></div>
+
+    <div class="brand-name">
+      VITALS MONITOR
+    </div>
+
+  </div>
+
+
+  <div class="card">
+
+    <h1>Sign in</h1>
+
+    <p class="sub">
+      Enter the credentials you were given to view live vitals.
+    </p>
+
+
+    <div class="field">
+
+      <label for="email">
+        Email
+      </label>
+
+      <input
+        type="email"
+        id="email"
+        autocomplete="username"
+        placeholder="you@example.com"
+      />
+
+    </div>
+
+
+    <div class="field">
+
+      <label for="password">
+        Password
+      </label>
+
+      <input
+        type="password"
+        id="password"
+        autocomplete="current-password"
+        placeholder="Password"
+      />
+
+    </div>
+
+
+    <button
+      class="primary"
+      id="loginBtn"
+    >
+      Sign in
+    </button>
+
+
+    <div
+      class="result bad"
+      id="result"
+    ></div>
+
+  </div>
+
+</div>
+
+
+
+<!-- =========================================
+     DASHBOARD
+========================================= -->
+
+<div id="dashWrap" class="dash-wrap">
+
+
+  <div class="dash-header">
+
+    <div class="who">
+      Signed in as
+      <span>patient_vital</span>
+    </div>
+
+    <button
+      class="logout-btn"
+      id="logoutBtn"
+    >
+      Sign out
+    </button>
+
+  </div>
+
+
+  <!-- VITALS -->
+
+  <div class="vitals-grid">
+
+
+    <div class="vital-card">
+
+      <div class="vital-label">
+        HEART RATE
+      </div>
+
+      <div class="vital-value bpm">
+
+        <span id="bpmValue">
+          --
+        </span>
+
+        <span class="unit">
+          bpm
+        </span>
+
+      </div>
+
+      <div
+        class="vital-updated"
+        id="bpmUpdated"
+      >
+        no data yet
+      </div>
+
+    </div>
+
+
+
+    <div class="vital-card">
+
+      <div class="vital-label">
+        TEMPERATURE
+      </div>
+
+      <div class="vital-value temp">
+
+        <span id="tempValue">
+          --
+        </span>
+
+        <span class="unit">
+          °C
+        </span>
+
+      </div>
+
+      <div
+        class="vital-updated"
+        id="tempUpdated"
+      >
+        no data yet
+      </div>
+
+    </div>
+
+
+
+    <div class="vital-card">
+
+      <div class="vital-label">
+        SPO2
+      </div>
+
+      <div class="vital-value spo2">
+
+        <span id="spo2Value">
+          --
+        </span>
+
+        <span class="unit">
+          %
+        </span>
+
+      </div>
+
+      <div
+        class="vital-updated"
+        id="spo2Updated"
+      >
+        no data yet
+      </div>
+
+    </div>
+
+
+  </div>
+
+
+  <!-- PUSH ALERTS -->
+
+  <div class="sim-card" style="margin-top:0; margin-bottom:14px;">
+
+    <div class="controls-title">
+      PUSH ALERTS
+    </div>
+
+    <button class="primary" id="pushBtn" style="margin-top:0;">
+      Enable push alerts
+    </button>
+
+    <button class="sim-reset-btn" id="pushTestBtn" style="margin-top:8px;">
+      Send test push
+    </button>
+
+    <div class="conn-meta">
+      <span id="pushStatus">Not enabled on this device</span>
+    </div>
+
+  </div>
+
+
+  <div class="med-banner" id="medBanner"></div>
+
+  <!-- ACKNOWLEDGE -->
+
+  <button class="ack-btn" id="ackBtn">
+    ACKNOWLEDGE
+  </button>
+
+  <div class="ack-badge" id="ackBadge">
+    ACKNOWLEDGED
+  </div>
+
+
+  <!-- =========================================
+       CAMERA: emergency image + link to the local live view
+  ========================================= -->
+
+  <div class="sim-card" style="margin-top:0; margin-bottom:14px;">
+
+    <div class="controls-title">
+      CAMERA
+    </div>
+
+    <div class="conn-meta" style="margin-top:0;">
+      <span id="camStatusLabel">Camera: no data yet</span>
+    </div>
+
+    <button class="show-img-btn" id="showImgBtn">
+      SHOW EMERGENCY IMAGE
+    </button>
+
+    <button class="req-photo-btn" id="reqPhotoBtn">
+      SEND CURRENT PHOTO TO TELEGRAM
+    </button>
+
+    <div class="cam-img-box" id="emImgBox">
+      <img id="emImg" alt="Emergency photo">
+    </div>
+
+    <div class="conn-meta">
+      <span id="emImgNote"></span>
+    </div>
+
+    <div class="conn-meta">
+      <span id="camHint"></span>
+    </div>
+
+    <div class="conn-meta">
+      <span>
+        Live video works only on the monitor's own Wi-Fi (VitalsMonitor):
+        <a class="cam-link" href="http://192.168.4.1" target="_blank" rel="noopener">open the live camera</a>
+        <br>
+        Camera on its own (Wi-Fi VitalsCam):
+        <a class="cam-link" href="http://192.168.5.1" target="_blank" rel="noopener">open camera only</a>
+      </span>
+    </div>
+
+  </div>
+
+
+  <!-- =========================================
+       ALERT CONTROLS: clear everything / test the medicine box
+  ========================================= -->
+
+  <div class="sim-card" style="margin-top:0; margin-bottom:14px;">
+
+    <div class="controls-title">
+      ALERT CONTROLS
+    </div>
+
+    <button class="clear-all-btn" id="clearAllBtn" style="margin-top:0;">
+      CLEAR ALL (alarms, timers, simulations)
+    </button>
+
+    <button class="req-photo-btn" id="simIrBtn">
+      SIMULATE MEDICINE BOX OPENED (IR)
+    </button>
+
+    <div class="conn-meta">
+      <span id="alertCtlNote">
+        Clear all deletes every alarm, timer and simulated alert and stops anything that is ringing.
+      </span>
+    </div>
+
+  </div>
+
+
+  <!-- GRAPH BUTTON & CARD -->
+
+  <button class="show-graph-btn" id="showGraphBtn">
+    📈 SHOW GRAPH
+  </button>
+
+  <div class="graph-card" id="graphCard">
+
+    <div class="graph-header-bar">
+
+      <div class="graph-nav">
+
+        <button class="graph-tab active-bpm" id="tabBpmBtn">
+          HEART RATE
+        </button>
+
+        <button class="graph-tab" id="tabTempBtn">
+          TEMP
+        </button>
+
+        <button class="graph-tab" id="tabSpo2Btn">
+          SPO2
+        </button>
+
+      </div>
+
+      <button class="hide-graph-btn" id="hideGraphBtn">
+        ✕ HIDE GRAPH
+      </button>
+
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="vitalsChart"></canvas>
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================================
+       VITALS SIMULATOR (TEST / DEMO)
+  ========================================= -->
+
+  <div class="sim-card">
+
+    <div class="controls-title">
+      SIMULATE CRITICAL VITALS
+    </div>
+
+    <div class="sim-buttons">
+
+      <button class="sim-btn" id="simTempBtn" data-label="Low Temp">
+        Low Temp
+      </button>
+
+      <button class="sim-btn" id="simPulseBtn" data-label="Low Pulse">
+        Low Pulse
+      </button>
+
+      <button class="sim-btn" id="simSpo2Btn" data-label="Low SpO2">
+        Low SpO2
+      </button>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- =========================================
+       SCHEDULED REMINDERS
+  ========================================= -->
+
+  <div class="notify-card">
+
+
+    <div class="notify-header">
+
+      <div class="notify-title">
+        SCHEDULED REMINDERS
+      </div>
+
+
+      <button
+        class="add-notify"
+        id="addNotifyBtn"
+      >
+        + Add
+      </button>
+
+    </div>
+
+
+
+    <!-- ADD / EDIT FORM -->
+
+    <div
+      class="notify-form"
+      id="notifyForm"
+    >
+
+      <!-- Alarm vs Timer Selector -->
+
+      <div class="mode-selector">
+
+        <button
+          type="button"
+          class="type-mode-btn active"
+          id="formAlarmModeBtn"
+        >
+          Alarm Time
+        </button>
+
+        <button
+          type="button"
+          class="type-mode-btn"
+          id="formTimerModeBtn"
+        >
+          Timer Countdown
+        </button>
+
+      </div>
+
+
+      <!-- Alarm Inputs -->
+
+      <div
+        class="time-row"
+        id="alarmInputsRow"
+      >
+
+        <select id="notifyHour">
+
+          <option value="1">01</option>
+          <option value="2">02</option>
+          <option value="3">03</option>
+          <option value="4">04</option>
+          <option value="5">05</option>
+          <option value="6">06</option>
+          <option value="7" selected>07</option>
+          <option value="8">08</option>
+          <option value="9">09</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+
+        </select>
+
+
+        <select id="notifyMinute">
+
+          <option value="0" selected>00</option>
+          <option value="5">05</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+          <option value="25">25</option>
+          <option value="30">30</option>
+          <option value="35">35</option>
+          <option value="40">40</option>
+          <option value="45">45</option>
+          <option value="50">50</option>
+          <option value="55">55</option>
+
+        </select>
+
+
+        <select id="notifyAmPm">
+
+          <option value="AM" selected>
+            AM
+          </option>
+
+          <option value="PM">
+            PM
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- Timer Inputs -->
+
+      <div
+        class="timer-row"
+        id="timerInputsRow"
+        style="display:none;"
+      >
+
+        <input
+          type="number"
+          id="timerMins"
+          min="0"
+          max="99"
+          placeholder="Minutes"
+          value="5"
+        />
+
+        <input
+          type="number"
+          id="timerSecs"
+          min="0"
+          max="59"
+          placeholder="Seconds"
+          value="0"
+        />
+
+      </div>
+
+
+      <input
+        class="notify-message"
+        id="notifyMessage"
+        type="text"
+        placeholder="Reminder label / message"
+      />
+
+
+      <button
+        class="notify-save"
+        id="saveNotifyBtn"
+      >
+        Save
+      </button>
+
+
+      <button
+        class="notify-cancel"
+        id="cancelNotifyBtn"
+      >
+        Cancel
+      </button>
+
+
+    </div>
+
+
+
+    <!-- REMINDERS LIST -->
+
+    <div id="notifyList"></div>
+
+
+  </div>
+
+
+
+  <!-- CONNECTION -->
+
+  <div class="conn-status">
+
+    <div
+      class="conn-dot"
+      id="connDot"
+    ></div>
+
+    <span id="connLabel">
+      Connecting…
+    </span>
+
+  </div>
+
+  <div class="conn-meta">
+
+    <span id="lastUpdatedLabel">
+      Updated --
+    </span>
+
+    <span id="uptimeLabel">
+      Running --
+    </span>
+
+  </div>
+
+
+</div>
+
+
+
+<!-- =========================================
+     FIREBASE + JAVASCRIPT
+========================================= -->
+
+<script type="module">
+
+
+/* =========================================
+   FIREBASE IMPORTS
+========================================= */
+
+import {
+  initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+
+import {
+  getDatabase,
+  ref,
+  onValue,
+  set,
+  update,
+  push,
+  remove,
+  get
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+
+import {
+  getMessaging,
+  getToken,
+  onMessage,
+  isSupported
+}
+from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+
+
+
+/* =========================================
+   FIREBASE CONFIG
+========================================= */
+
+const firebaseConfig = {
+
+  apiKey:
+    "AIzaSyCGOOMCav0We0qowk-9NBDSWzYn0rrPzKo",
+
+  authDomain:
+    "securityfix-1e746.firebaseapp.com",
+
+  databaseURL:
+    "https://securityfix-1e746-default-rtdb.asia-southeast1.firebasedatabase.app/",
+  // ⚠️ REPLACE the line above: go to Realtime Database in the Firebase
+  // console, create the database if you haven't, then copy the URL shown
+  // at the top of the Data tab and paste it here exactly.
+
+  projectId:
+    "securityfix-1e746",
+
+  storageBucket:
+    "securityfix-1e746.firebasestorage.app",
+
+  messagingSenderId:
+    "312289265846",
+
+  appId:
+    "1:312289265846:web:819676da7008d15546fe17"
+
+};
+
+
+
+const app =
+  initializeApp(firebaseConfig);
+
+
+const auth =
+  getAuth(app);
+
+
+const db =
+  getDatabase(app);
+
+
+
+/* =========================================
+   LOGIN
+========================================= */
+
+const authWrap =
+  document.getElementById("authWrap");
+
+const dashWrap =
+  document.getElementById("dashWrap");
+
+const emailInput =
+  document.getElementById("email");
+
+const passwordInput =
+  document.getElementById("password");
+
+const loginBtn =
+  document.getElementById("loginBtn");
+
+const result =
+  document.getElementById("result");
+
+const logoutBtn =
+  document.getElementById("logoutBtn");
+
+
+
+loginBtn.addEventListener(
+  "click",
+  handleLogin
+);
+
+
+passwordInput.addEventListener(
+  "keydown",
+  (e) => {
+
+    if (e.key === "Enter") {
+
+      handleLogin();
+
+    }
+
+  }
+);
+
+
+
+async function handleLogin(){
+
+  const email =
+    emailInput.value.trim();
+
+  const p =
+    passwordInput.value;
+
+  if (!email || !p){
+
+    result.style.display =
+      "block";
+
+    result.textContent =
+      "✘ Please enter both email and password.";
+
+    return;
+
+  }
+
+  result.style.display =
+    "none";
+
+  loginBtn.disabled =
+    true;
+
+
+  try{
+
+    await signInWithEmailAndPassword(auth, email, p);
+
+  }
+
+  catch(err){
+
+    result.style.display =
+      "block";
+
+    if(
+      err.code === "auth/invalid-credential" ||
+      err.code === "auth/wrong-password" ||
+      err.code === "auth/user-not-found" ||
+      err.code === "auth/invalid-email"
+    ){
+      result.textContent =
+        "✘ Incorrect email or password.";
+    } else if (err.code === "auth/too-many-requests"){
+      result.textContent =
+        "✘ Too many attempts. Please wait and try again.";
+    } else {
+      result.textContent =
+        "Could not sign in. Check your Firebase config.";
+    }
+
+    console.error(err);
+
+  }
+
+  finally{
+
+    loginBtn.disabled =
+      false;
+
+  }
+
+}
+
+
+
+/* =========================================
+   LOGOUT
+========================================= */
+
+logoutBtn.addEventListener(
+  "click",
+  async () => {
+
+    stopAllVitalSimulations();
+
+    await removePushToken();
+
+    await signOut(auth);
+
+    dashWrap.style.display =
+      "none";
+
+    authWrap.style.display =
+      "block";
+
+    emailInput.value =
+      "";
+
+    passwordInput.value =
+      "";
+
+  }
+);
+
+
+
+/* =========================================
+   FIREBASE AUTH STATE
+========================================= */
+
+onAuthStateChanged(
+  auth,
+  (user) => {
+
+    if(user){
+
+      authWrap.style.display =
+        "none";
+
+      dashWrap.style.display =
+        "block";
+
+      attachVitalsListener();
+
+      attachAlarmListener();
+
+      attachNotificationsListener();
+
+      attachPhotoListener();
+
+      attachSimListener();
+
+      initGraph();
+
+      refreshPushIfGranted();
+
+    }
+
+  }
+);
+
+
+
+/* =========================================
+   VITALS DISPLAY
+========================================= */
+
+const bpmValue =
+  document.getElementById("bpmValue");
+
+const tempValue =
+  document.getElementById("tempValue");
+
+const spo2Value =
+  document.getElementById("spo2Value");
+
+const bpmUpdated =
+  document.getElementById("bpmUpdated");
+
+const tempUpdated =
+  document.getElementById("tempUpdated");
+
+const spo2Updated =
+  document.getElementById("spo2Updated");
+
+const connDot =
+  document.getElementById("connDot");
+
+const connLabel =
+  document.getElementById("connLabel");
+
+const lastUpdatedLabel =
+  document.getElementById("lastUpdatedLabel");
+
+const uptimeLabel =
+  document.getElementById("uptimeLabel");
+
+const ackBtn =
+  document.getElementById("ackBtn");
+
+const ackBadge =
+  document.getElementById("ackBadge");
+
+const medBanner =
+  document.getElementById("medBanner");
+
+
+let vitalsAttached =
+  false;
+
+let alarmAttached =
+  false;
+
+
+const MIN_NORMAL = {
+  temp: 19.0,
+  bpm: 60,
+  spo2: 95
+};
+
+const SIMULATED_LOW = {
+  temp: MIN_NORMAL.temp - 20,
+  bpm: MIN_NORMAL.bpm - 20,
+  spo2: MIN_NORMAL.spo2 - 20
+};
+
+
+function timeAgo(ts){
+
+  if(!ts){
+
+    return "no data yet";
+
+  }
+
+
+  const s =
+    Math.floor(
+      (Date.now() - ts) / 1000
+    );
+
+
+  if(s < 60){
+
+    return `${s}s ago`;
+
+  }
+
+
+  if(s < 3600){
+
+    return `${Math.floor(s / 60)}m ago`;
+
+  }
+
+
+  return `${Math.floor(s / 3600)}h ago`;
+
+}
+
+
+function formatDuration(totalSeconds){
+
+  const safeSeconds =
+    Math.max(0, Math.floor(totalSeconds));
+
+  const h =
+    Math.floor(safeSeconds / 3600);
+
+  const m =
+    Math.floor((safeSeconds % 3600) / 60);
+
+  const s =
+    safeSeconds % 60;
+
+  return `${h}h ${m}m ${s}s`;
+
+}
+
+
+let lastRawVitals = null;
+let lastUpdateReceivedAt = null; // browser clock time (ms) the most recent /vitals snapshot arrived
+
+const simulationOverrides = {
+  temp: null,
+  bpm: null,
+  spo2: null
+};
+
+let EMERGENCY = false;
+let emergencyNotified = false;
+let alarmAcknowledged = false;  // mirrors /alarm/acknowledged — only the ESP32 ever writes it
+let emergencyRepeatTimer = null;
+
+
+// ACKNOWLEDGE button / badge: the dashboard only asks (writes /ack) and
+// shows whatever the ESP32 reports back — it never decides on its own.
+function renderAckUI(){
+
+  // A medicine reminder is ringing on the monitor: it stays until someone
+  // acknowledges it here, or the IR sensor in the medicine box sees a hand.
+  const medRinging =
+    !!(lastRawVitals && lastRawVitals.medAlert === true);
+
+  ackBtn.style.display =
+    ((EMERGENCY && !alarmAcknowledged) || medRinging) ? "block" : "none";
+
+  ackBtn.textContent =
+    (medRinging && !(EMERGENCY && !alarmAcknowledged))
+      ? "ACKNOWLEDGE ALARM"
+      : "ACKNOWLEDGE";
+
+  if(medRinging){
+
+    medBanner.style.display = "block";
+
+    medBanner.textContent =
+      "MEDICINE TIME: " + (lastRawVitals.medMsg || "Reminder") +
+      " - tap ACKNOWLEDGE, or open the medicine box";
+
+  }
+  else{
+
+    medBanner.style.display = "none";
+
+  }
+
+  ackBadge.style.display =
+    (EMERGENCY && alarmAcknowledged) ? "block" : "none";
+
+}
+
+
+// The 60 s "emergency still active" repeat is now sent as a push by
+// server/server.py (it stops once the ESP32 reports the alarm acknowledged).
+function syncEmergencyRepeat(){
+
+  // nothing to do in the browser any more
+
+}
+
+
+ackBtn.addEventListener(
+  "click",
+  async () => {
+    ackBtn.disabled = true;
+    try {
+      await set(ref(db, "ack"), Date.now());
+      document.getElementById("alertCtlNote").textContent =
+        "Acknowledge command sent; waiting for the monitor. Cloud commands require its internet connection.";
+    } catch (err) {
+      document.getElementById("alertCtlNote").textContent = "Acknowledge failed: " + err.message;
+    } finally { ackBtn.disabled = false; }
+  }
+);
+
+
+function getEffectiveVitals(){
+
+  const eff = {
+    ...(lastRawVitals || {})
+  };
+
+  // bpm, spo2 and temp all come straight from Firebase "vitals" — bpm/spo2 are
+  // generated on the ESP32, temp is the direct DS18B20 reading. The browser
+  // never invents a value on its own; simulation overrides below are the
+  // only thing that can replace what the device reported.
+
+  Object.keys(simulationOverrides).forEach(
+    key => {
+
+      if(simulationOverrides[key] !== null){
+        eff[key] = simulationOverrides[key];
+      }
+
+    }
+  );
+
+  return eff;
+
+}
+
+
+function renderVitals(){
+
+  const data =
+    getEffectiveVitals();
+
+
+  EMERGENCY =
+    (data.bpm  !== undefined && data.bpm  !== null && data.bpm  < 45) ||
+    (data.temp !== undefined && data.temp !== null && data.temp < 20) ||
+    (data.spo2 !== undefined && data.spo2 !== null && data.spo2 < 87);
+
+
+  // Emergency push notifications are sent by server/server.py through
+  // Firebase Cloud Messaging, so they also arrive when this page is closed.
+  // This flag only tracks the onset locally.
+  if(EMERGENCY && !emergencyNotified){
+
+    emergencyNotified = true;
+
+  }
+  else if(!EMERGENCY){
+
+    emergencyNotified = false;
+
+  }
+
+
+  renderAckUI();
+
+  syncEmergencyRepeat();
+
+
+  bpmValue.textContent =
+    data.bpm ?? "--";
+
+
+  tempValue.textContent =
+    data.temp !== undefined && data.temp !== null
+      ? Number(data.temp).toFixed(1)
+      : "--";
+
+
+  spo2Value.textContent =
+    data.spo2 ?? "--";
+
+
+  bpmUpdated.textContent =
+    simulationOverrides.bpm !== null
+      ? "SIMULATED"
+      : (lastRawVitals && lastRawVitals.bpm !== undefined && lastRawVitals.bpm !== null
+          ? timeAgo(lastUpdateReceivedAt)
+          : "NO DATA YET");
+
+
+  tempUpdated.textContent =
+    simulationOverrides.temp !== null
+      ? "SIMULATED"
+      : (lastRawVitals && lastRawVitals.temp !== undefined && lastRawVitals.temp !== null
+          ? timeAgo(lastUpdateReceivedAt)
+          : "NO DATA YET");
+
+
+  spo2Updated.textContent =
+    simulationOverrides.spo2 !== null
+      ? "SIMULATED"
+      : (lastRawVitals && lastRawVitals.spo2 !== undefined && lastRawVitals.spo2 !== null
+          ? timeAgo(lastUpdateReceivedAt)
+          : "NO DATA YET");
+
+
+  updateGraphData(data);
+
+  renderCamUI();
+
+  renderConnStatus();
+
+}
+
+
+function renderConnStatus(){
+
+  const anySimulating =
+    Object.values(simulationOverrides).some(
+      v => v !== null
+    );
+
+
+  if(anySimulating){
+
+    connDot.className =
+      "conn-dot live";
+
+    connLabel.textContent =
+      "Simulating";
+
+  }
+
+  else{
+
+    const age =
+      lastUpdateReceivedAt
+        ? Date.now() - lastUpdateReceivedAt
+        : Infinity;
+
+
+    if(age < 15000){
+
+      connDot.className =
+        "conn-dot live";
+
+      connLabel.textContent =
+        "Live";
+
+    }
+
+    else if(lastRawVitals){
+
+      connDot.className =
+        "conn-dot stale";
+
+      connLabel.textContent =
+        "Last reading " + timeAgo(lastUpdateReceivedAt);
+
+    }
+
+    else{
+
+      connDot.className =
+        "conn-dot stale";
+
+      connLabel.textContent =
+        "Waiting for device...";
+
+    }
+
+  }
+
+
+  lastUpdatedLabel.textContent =
+    lastUpdateReceivedAt
+      ? "Updated " + timeAgo(lastUpdateReceivedAt)
+      : "Updated --";
+
+
+  if(lastRawVitals && lastRawVitals.timestamp !== undefined && lastUpdateReceivedAt){
+
+    const espUptimeMs =
+      lastRawVitals.timestamp + (Date.now() - lastUpdateReceivedAt);
+
+    uptimeLabel.textContent =
+      "Running " + formatDuration(espUptimeMs / 1000);
+
+  }
+
+  else{
+
+    uptimeLabel.textContent =
+      "Running --";
+
+  }
+
+}
+
+
+setInterval(renderConnStatus, 1000);
+
+
+function attachAlarmListener(){
+
+  if(alarmAttached){
+
+    return;
+
+  }
+
+
+  alarmAttached =
+    true;
+
+
+  onValue(
+    ref(db, "alarm/acknowledged"),
+
+    (snap) => {
+
+      alarmAcknowledged =
+        snap.val() === true;
+
+      renderAckUI();
+
+      syncEmergencyRepeat();
+
+    },
+
+    (err) => {
+
+      console.error(err);
+
+    }
+
+  );
+
+}
+
+
+function attachVitalsListener(){
+
+  if(vitalsAttached){
+
+    return;
+
+  }
+
+
+  vitalsAttached =
+    true;
+
+
+  onValue(
+    ref(db, "vitals"),
+
+    (snap) => {
+
+      const newData =
+        snap.val();
+
+      const previousTimestamp =
+        lastRawVitals ? lastRawVitals.timestamp : undefined;
+
+      lastRawVitals =
+        newData;
+
+      // Only count this as proof the ESP is actively running right now
+      // if its reported timestamp has moved forward since the last
+      // snapshot. Firebase fires this callback immediately with
+      // whatever is already stored — which, if the ESP is powered off,
+      // could be an old reading from a previous session. Without this
+      // check that stale snapshot would get stamped with "now" and the
+      // dashboard would show "Live" for up to 15s with no device
+      // connected at all.
+      const isFreshPush =
+        newData &&
+        newData.timestamp !== undefined &&
+        previousTimestamp !== undefined &&
+        newData.timestamp !== previousTimestamp;
+
+      if(isFreshPush){
+
+        lastUpdateReceivedAt =
+          Date.now();
+
+      }
+
+      renderVitals();
+
+    },
+
+    (err) => {
+
+      connDot.className =
+        "conn-dot stale";
+
+      connLabel.textContent =
+        "Database read failed — check rules/config.";
+
+      console.error(err);
+
+    }
+
+  );
+
+}
+
+
+/* =========================================
+   REAL-TIME GRAPH (BPM / TEMP / SPO2)
+========================================= */
+
+const showGraphBtn = document.getElementById("showGraphBtn");
+const hideGraphBtn = document.getElementById("hideGraphBtn");
+const graphCard = document.getElementById("graphCard");
+
+const tabBpmBtn = document.getElementById("tabBpmBtn");
+const tabTempBtn = document.getElementById("tabTempBtn");
+const tabSpo2Btn = document.getElementById("tabSpo2Btn");
+
+let vitalsChart = null;
+let currentGraphType = "bpm"; // bpm | temp | spo2
+
+const graphHistory = {
+  labels: Array(20).fill(""),
+  bpm: Array(20).fill(82),
+  temp: Array(20).fill(null),
+  spo2: Array(20).fill(97)
+};
+
+const GRAPH_STYLES = {
+  bpm: {
+    label: "Pulse (bpm)",
+    color: "#3ef58a",
+    bgColor: "rgba(62,245,138,0.12)"
+  },
+  temp: {
+    label: "Temperature (°C)",
+    color: "#ffb648",
+    bgColor: "rgba(255,182,72,0.12)"
+  },
+  spo2: {
+    label: "SpO2 (%)",
+    color: "#57c7ff",
+    bgColor: "rgba(87,199,255,0.12)"
+  }
+};
+
+const GRAPH_RANGES = {
+  bpm: { min: 50, max: 130 },
+  spo2: { min: 85, max: 100 },
+  temp: { min: 25, max: 45 }
+};
+
+showGraphBtn.addEventListener("click", () => {
+  graphCard.classList.add("active");
+  showGraphBtn.style.display = "none";
+  if(vitalsChart) {
+    vitalsChart.resize();
+  }
+});
+
+hideGraphBtn.addEventListener("click", () => {
+  graphCard.classList.remove("active");
+  showGraphBtn.style.display = "flex";
+});
+
+function setGraphTab(type){
+  currentGraphType = type;
+
+  tabBpmBtn.className = `graph-tab ${type === 'bpm' ? 'active-bpm' : ''}`;
+  tabTempBtn.className = `graph-tab ${type === 'temp' ? 'active-temp' : ''}`;
+  tabSpo2Btn.className = `graph-tab ${type === 'spo2' ? 'active-spo2' : ''}`;
+
+  if(vitalsChart){
+    const style = GRAPH_STYLES[type];
+    const range = GRAPH_RANGES[type];
+
+    vitalsChart.data.datasets[0].label = style.label;
+    vitalsChart.data.datasets[0].borderColor = style.color;
+    vitalsChart.data.datasets[0].backgroundColor = style.bgColor;
+    vitalsChart.data.datasets[0].data = graphHistory[type];
+
+    vitalsChart.options.scales.y.min = range.min;
+    vitalsChart.options.scales.y.max = range.max;
+    vitalsChart.options.elements.point.radius = 0;
+
+    vitalsChart.update();
+  }
+}
+
+tabBpmBtn.addEventListener("click", () => setGraphTab("bpm"));
+tabTempBtn.addEventListener("click", () => setGraphTab("temp"));
+tabSpo2Btn.addEventListener("click", () => setGraphTab("spo2"));
+
+function initGraph(){
+  const ctx = document.getElementById("vitalsChart").getContext("2d");
+  const style = GRAPH_STYLES[currentGraphType];
+  const range = GRAPH_RANGES[currentGraphType];
+
+  vitalsChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: graphHistory.labels,
+      datasets: [{
+        label: style.label,
+        data: graphHistory[currentGraphType],
+        borderColor: style.color,
+        backgroundColor: style.bgColor,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.2,
+        pointRadius: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: "#6f8b83", font: { family: "IBM Plex Mono", size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          display: false,
+          grid: { color: "#1c2622" }
+        },
+        y: {
+          min: range.min,
+          max: range.max,
+          grid: { color: "#1c2622" },
+          ticks: { color: "#6f8b83", font: { family: "IBM Plex Mono", size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+function updateGraphData(data){
+  if(data.bpm === undefined && data.temp === undefined && data.spo2 === undefined) return;
+
+  // Append new continuous values to array
+  if(graphHistory.temp.length >= 20){
+    graphHistory.temp.shift();
+    graphHistory.spo2.shift();
+    graphHistory.bpm.shift();
+  }
+
+  graphHistory.temp.push(data.temp !== undefined && data.temp !== null ? Number(data.temp).toFixed(1) : null);
+  graphHistory.spo2.push(data.spo2 ?? null);
+  graphHistory.bpm.push(data.bpm ?? null);
+
+  if(vitalsChart){
+    vitalsChart.update();
+  }
+}
+
+
+/* =========================================
+   VITALS SIMULATOR
+========================================= */
+
+const simTempBtn =
+  document.getElementById("simTempBtn");
+
+const simPulseBtn =
+  document.getElementById("simPulseBtn");
+
+const simSpo2Btn =
+  document.getElementById("simSpo2Btn");
+
+const simButtons = {
+  temp: simTempBtn,
+  bpm: simPulseBtn,
+  spo2: simSpo2Btn
+};
+
+
+function isVitalSimulating(key){
+  return simulationOverrides[key] !== null;
+}
+
+
+function startVitalSimulation(key){
+
+  if(isVitalSimulating(key)){
+    return;
+  }
+
+  simulationOverrides[key] =
+    SIMULATED_LOW[key];
+
+  // Push the override to Firebase so the ESP32 picks it up too —
+  // this is what lets "Simulate Low X" actually trigger EMERGENCY and
+  // the physical LED/buzzer, not just change what this screen shows.
+  set(ref(db, "simulate/" + key), SIMULATED_LOW[key]);
+
+  const btn = simButtons[key];
+
+  btn.classList.add("active");
+  btn.textContent = "Stop Simulation";
+
+  renderVitals();
+
+}
+
+
+function stopVitalSimulation(key){
+
+  if(!isVitalSimulating(key)){
+    return;
+  }
+
+  simulationOverrides[key] = null;
+
+  // Clear the override in Firebase so the ESP32 reverts to its own
+  // mock/real reading on its next poll.
+  remove(ref(db, "simulate/" + key));
+
+  const btn = simButtons[key];
+
+  btn.classList.remove("active");
+  btn.textContent = btn.dataset.label;
+
+  renderVitals();
+
+}
+
+
+function toggleVitalSimulation(key){
+
+  if(isVitalSimulating(key)){
+    stopVitalSimulation(key);
+  }
+  else{
+    startVitalSimulation(key);
+  }
+
+}
+
+
+function stopAllVitalSimulations(){
+
+  Object.keys(simulationOverrides).forEach(
+    key => stopVitalSimulation(key)
+  );
+
+}
+
+
+simTempBtn.addEventListener(
+  "click",
+  () => {
+    toggleVitalSimulation("temp");
+  }
+);
+
+
+simPulseBtn.addEventListener(
+  "click",
+  () => {
+    toggleVitalSimulation("bpm");
+  }
+);
+
+
+simSpo2Btn.addEventListener(
+  "click",
+  () => {
+    toggleVitalSimulation("spo2");
+  }
+);
+
+
+
+
+/* =========================================
+   REMINDERS SYSTEM (ALARM & TIMER)
+   ========================================= */
+
+const addNotifyBtn = document.getElementById("addNotifyBtn");
+const saveNotifyBtn = document.getElementById("saveNotifyBtn");
+const cancelNotifyBtn = document.getElementById("cancelNotifyBtn");
+
+const notifyForm = document.getElementById("notifyForm");
+const notifyList = document.getElementById("notifyList");
+
+const formAlarmModeBtn = document.getElementById("formAlarmModeBtn");
+const formTimerModeBtn = document.getElementById("formTimerModeBtn");
+
+const alarmInputsRow = document.getElementById("alarmInputsRow");
+const timerInputsRow = document.getElementById("timerInputsRow");
+
+const notifyHour = document.getElementById("notifyHour");
+const notifyMinute = document.getElementById("notifyMinute");
+const notifyAmPm = document.getElementById("notifyAmPm");
+
+const timerMins = document.getElementById("timerMins");
+const timerSecs = document.getElementById("timerSecs");
+
+const notifyMessage = document.getElementById("notifyMessage");
+
+let scheduledNotifications = [];
+let notificationTimers = {};
+let liveTimerIntervals = {};
+let editingNotificationId = null;
+let notificationsAttached = false;
+let currentFormType = "alarm";
+
+
+function setFormType(type){
+  currentFormType = type;
+  if(type === "alarm"){
+    formAlarmModeBtn.classList.add("active");
+    formTimerModeBtn.classList.remove("active");
+    alarmInputsRow.style.display = "grid";
+    timerInputsRow.style.display = "none";
+  } else {
+    formTimerModeBtn.classList.add("active");
+    formAlarmModeBtn.classList.remove("active");
+    timerInputsRow.style.display = "grid";
+    alarmInputsRow.style.display = "none";
+  }
+}
+
+formAlarmModeBtn.addEventListener("click", () => setFormType("alarm"));
+formTimerModeBtn.addEventListener("click", () => setFormType("timer"));
+
+
+function attachNotificationsListener(){
+
+  if(notificationsAttached){
+    return;
+  }
+
+  notificationsAttached = true;
+
+  onValue(
+    ref(db, "notifications"),
+    (snap) => {
+
+      const data = snap.val() || {};
+
+      scheduledNotifications =
+        Object.entries(data).map(([id, item]) => ({
+          id,
+          type: item.type || "alarm",
+          time: item.time || "00:00",
+          targetTime: item.targetTime || null,
+          message: item.message || "Reminder"
+        }));
+
+      scheduledNotifications.sort(
+        (a, b) => (a.targetTime || 0) - (b.targetTime || 0)
+      );
+
+      // Reminders and timers are fired by server/server.py (push), not by
+      // browser timers, so they also work when this page is closed.
+      renderNotifications();
+
+    },
+    (err) => {
+
+      console.error("Reminder database read failed:", err);
+
+      notifyList.innerHTML =
+        '<div class="empty-notifications">Could not load reminders from Firebase.</div>';
+
+    }
+  );
+}
+
+
+addNotifyBtn.addEventListener(
+  "click",
+  () => {
+
+    editingNotificationId = null;
+
+    setFormType("alarm");
+    notifyHour.value = "7";
+    notifyMinute.value = "0";
+    notifyAmPm.value = "AM";
+    timerMins.value = "5";
+    timerSecs.value = "0";
+    notifyMessage.value = "";
+
+    notifyForm.style.display = "block";
+    notifyMessage.focus();
+
+  }
+);
+
+
+cancelNotifyBtn.addEventListener(
+  "click",
+  () => {
+
+    editingNotificationId = null;
+    notifyForm.style.display = "none";
+
+  }
+);
+
+
+saveNotifyBtn.addEventListener(
+  "click",
+  async () => {
+
+    const message = notifyMessage.value.trim() || "Reminder";
+
+    if(!auth.currentUser){
+      alert("Please sign in first.");
+      return;
+    }
+
+    let timeStr = "";
+    let targetTime = 0;
+
+    if(currentFormType === "alarm"){
+      let hour = Number(notifyHour.value);
+      const minute = Number(notifyMinute.value);
+      const ampm = notifyAmPm.value;
+
+      if(ampm === "AM" && hour === 12) hour = 0;
+      if(ampm === "PM" && hour !== 12) hour += 12;
+
+      timeStr = String(hour).padStart(2,"0") + ":" + String(minute).padStart(2,"0");
+
+      const now = new Date();
+      const target = new Date();
+      target.setHours(hour, minute, 0, 0);
+      if(target.getTime() <= now.getTime()){
+        target.setDate(target.getDate() + 1);
+      }
+      targetTime = target.getTime();
+
+    } else {
+      const mins = parseInt(timerMins.value, 10) || 0;
+      const secs = parseInt(timerSecs.value, 10) || 0;
+      const totalSecs = (mins * 60) + secs;
+
+      if(totalSecs <= 0){
+        alert("Please set a valid timer duration.");
+        return;
+      }
+
+      timeStr = `${String(mins).padStart(2,"0")}:${String(secs).padStart(2,"0")}`;
+      targetTime = Date.now() + (totalSecs * 1000);
+    }
+
+    try{
+
+      if(editingNotificationId){
+
+        await set(
+          ref(db, "notifications/" + editingNotificationId),
+          {
+            type: currentFormType,
+            time: timeStr,
+            targetTime: targetTime,
+            message: message
+          }
+        );
+
+      }
+      else{
+
+        const newRef = push(ref(db, "notifications"));
+
+        await set(
+          newRef,
+          {
+            type: currentFormType,
+            time: timeStr,
+            targetTime: targetTime,
+            message: message,
+            createdAt: Date.now()
+          }
+        );
+
+      }
+
+      notifyForm.style.display = "none";
+      editingNotificationId = null;
+
+    }
+    catch(err){
+
+      console.error("Could not save reminder:", err);
+
+      alert(
+        "Could not save reminder to Firebase. Check your Database Rules."
+      );
+
+    }
+
+  }
+);
+
+
+function formatTime(time){
+
+  const parts = time.split(":");
+  let hour = Number(parts[0]);
+  const minute = parts[1];
+  const ampm = hour >= 12 ? "PM" : "AM";
+
+  hour = hour % 12;
+  if(hour === 0) hour = 12;
+
+  return (
+    String(hour).padStart(2,"0") +
+    ":" +
+    minute +
+    " " +
+    ampm
+  );
+
+}
+
+
+function renderNotifications(){
+
+  Object.values(liveTimerIntervals).forEach(i => clearInterval(i));
+  liveTimerIntervals = {};
+
+  notifyList.innerHTML = "";
+
+  if(scheduledNotifications.length === 0){
+
+    notifyList.innerHTML =
+      '<div class="empty-notifications">No reminders scheduled.</div>';
+
+    return;
+
+  }
+
+  scheduledNotifications.forEach(
+    item => {
+
+      const row = document.createElement("div");
+      row.className = "notify-item";
+
+      const info = document.createElement("div");
+      info.className = "notify-info";
+
+      const timeWrap = document.createElement("div");
+      timeWrap.className = "notify-time-wrap";
+
+      const time = document.createElement("div");
+      time.className = `notify-time ${item.type === 'timer' ? 'timer-mode' : ''}`;
+
+      const badge = document.createElement("span");
+      badge.className = "badge-type";
+      badge.textContent = item.type;
+
+      if(item.type === "alarm"){
+        time.textContent = formatTime(item.time);
+      } else {
+        const updateTimerDisplay = () => {
+          const remainingSecs = Math.max(0, Math.ceil((item.targetTime - Date.now()) / 1000));
+          const m = Math.floor(remainingSecs / 60);
+          const s = remainingSecs % 60;
+          time.textContent = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+        };
+        updateTimerDisplay();
+        liveTimerIntervals[item.id] = setInterval(updateTimerDisplay, 1000);
+      }
+
+      timeWrap.appendChild(time);
+      timeWrap.appendChild(badge);
+
+      const message = document.createElement("div");
+      message.className = "notify-message-display";
+      message.textContent = item.message;
+
+      info.appendChild(timeWrap);
+      info.appendChild(message);
+
+      const actions = document.createElement("div");
+      actions.className = "notify-actions";
+
+      const edit = document.createElement("button");
+      edit.className = "notify-edit";
+      edit.textContent = "Edit";
+      edit.addEventListener("click", () => editNotification(item.id));
+
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "notify-delete";
+      removeBtn.textContent = "Delete";
+      removeBtn.addEventListener("click", () => deleteNotification(item.id));
+
+      actions.appendChild(edit);
+      actions.appendChild(removeBtn);
+
+      row.appendChild(info);
+      row.appendChild(actions);
+
+      notifyList.appendChild(row);
+
+    }
+  );
+
+}
+
+
+function editNotification(id){
+
+  const item = scheduledNotifications.find(n => n.id === id);
+
+  if(!item) return;
+
+  editingNotificationId = id;
+  setFormType(item.type);
+
+  if(item.type === "alarm"){
+    const parts = item.time.split(":");
+    let hour = Number(parts[0]);
+    const minute = Number(parts[1]);
+    const ampm = hour >= 12 ? "PM" : "AM";
+
+    hour = hour % 12;
+    if(hour === 0) hour = 12;
+
+    notifyHour.value = String(hour);
+    notifyMinute.value = String(minute);
+    notifyAmPm.value = ampm;
+  } else {
+    const remainingSecs = Math.max(0, Math.ceil((item.targetTime - Date.now()) / 1000));
+    timerMins.value = Math.floor(remainingSecs / 60);
+    timerSecs.value = remainingSecs % 60;
+  }
+
+  notifyMessage.value = item.message;
+  notifyForm.style.display = "block";
+  notifyMessage.focus();
+
+}
+
+
+async function deleteNotification(id){
+
+  const ok = confirm("Delete this reminder?");
+
+  if(!ok) return;
+
+  try{
+
+    if(notificationTimers[id]) clearTimeout(notificationTimers[id]);
+    delete notificationTimers[id];
+
+    if(liveTimerIntervals[id]) clearInterval(liveTimerIntervals[id]);
+    delete liveTimerIntervals[id];
+
+    await remove(ref(db, "notifications/" + id));
+
+  }
+  catch(err){
+
+    console.error("Could not delete reminder:", err);
+    alert("Could not delete reminder from Firebase.");
+
+  }
+
+}
+
+
+/* =========================================
+   PUSH ALERTS (Firebase Cloud Messaging)
+   Emergencies, repeats and reminders are sent as push messages by
+   server/server.py. This page only registers the device and shows
+   messages that arrive while the page is open.
+========================================= */
+
+const VAPID_KEY =
+  "BGzqQxIQj2z-G4ZKtIyzVgs7sBaavdL2FGhWrWAas1dLtN-b33W3BLEcZ3BcVoits7M__ipRV4LCXqsy1cSXJEI";
+
+const pushBtn = document.getElementById("pushBtn");
+const pushTestBtn = document.getElementById("pushTestBtn");
+const pushStatus = document.getElementById("pushStatus");
+
+let messaging = null;
+let swRegistration = null;
+let currentPushPath = null;
+let foregroundHandlerAttached = false;
+
+
+function setPushStatus(text){
+
+  pushStatus.textContent = text;
+
+}
+
+
+// Realtime Database keys can't contain . # $ [ ] /
+function tokenKey(token){
+
+  return token.replace(/[.#$\[\]\/]/g, "_");
+
+}
+
+
+async function getServiceWorker(){
+
+  if(!swRegistration){
+
+    swRegistration =
+      await navigator.serviceWorker.register("firebase-messaging-sw.js");
+
+    await navigator.serviceWorker.ready;
+
+  }
+
+  return swRegistration;
+
+}
+
+
+async function pushSupported(){
+
+  return (
+    ("serviceWorker" in navigator) &&
+    ("Notification" in window) &&
+    (await isSupported())
+  );
+
+}
+
+
+// Gets this browser's push token and saves it under /fcmTokens/<uid>/ so
+// the server knows where to send alerts.
+async function registerPushToken(){
+
+  const reg = await getServiceWorker();
+
+  if(!messaging){
+    messaging = getMessaging(app);
+  }
+
+  const token = await getToken(
+    messaging,
+    {
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: reg
+    }
+  );
+
+  if(!token){
+    throw new Error("No registration token available.");
+  }
+
+  const path =
+    "fcmTokens/" + auth.currentUser.uid + "/" + tokenKey(token);
+
+  await set(
+    ref(db, path),
+    {
+      token: token,
+      createdAt: Date.now()
+    }
+  );
+
+  currentPushPath = path;
+
+  attachForegroundHandler();
+
+  pushBtn.textContent = "Push alerts enabled ✓";
+
+  setPushStatus("Push alerts are enabled on this device.");
+
+}
+
+
+async function enablePush(){
+
+  if(!auth.currentUser){
+    return;
+  }
+
+  try{
+
+    if(!(await pushSupported())){
+
+      setPushStatus(
+        "Push isn't supported in this browser. On iPhone, add this page to the Home Screen first."
+      );
+
+      return;
+
+    }
+
+    const permission =
+      await Notification.requestPermission();
+
+    if(permission !== "granted"){
+
+      setPushStatus(
+        "Notifications are blocked. Allow them in the browser's site settings, then try again."
+      );
+
+      return;
+
+    }
+
+    await registerPushToken();
+
+  }
+  catch(err){
+
+    console.error("Could not enable push:", err);
+
+    setPushStatus("Could not enable push: " + err.message);
+
+  }
+
+}
+
+
+// After signing in, quietly re-save the token if permission was already
+// granted earlier (no popup, keeps the token fresh).
+async function refreshPushIfGranted(){
+
+  try{
+
+    if(!(await pushSupported())){
+      return;
+    }
+
+    if(Notification.permission === "granted"){
+      await registerPushToken();
+    }
+    else if(Notification.permission === "denied"){
+      setPushStatus("Notifications are blocked in this browser's site settings.");
+    }
+
+  }
+  catch(err){
+
+    console.error("Push refresh failed:", err);
+
+  }
+
+}
+
+
+// On sign-out, stop this device from receiving the patient's alerts.
+async function removePushToken(){
+
+  if(!currentPushPath){
+    return;
+  }
+
+  try{
+    await remove(ref(db, currentPushPath));
+  }
+  catch(err){
+    console.error("Could not remove push token:", err);
+  }
+
+  currentPushPath = null;
+
+  pushBtn.textContent = "Enable push alerts";
+
+  setPushStatus("Not enabled on this device");
+
+}
+
+
+// Messages that arrive while this page is open and focused. The service
+// worker handles the ones that arrive in the background.
+function attachForegroundHandler(){
+
+  if(foregroundHandlerAttached){
+    return;
+  }
+
+  foregroundHandlerAttached = true;
+
+  onMessage(
+    messaging,
+    async (payload) => {
+
+      const d = payload.data || {};
+
+      const reg = await getServiceWorker();
+
+      reg.showNotification(
+        d.title || "Patient monitor alert",
+        {
+          body: d.body || "",
+          tag: d.tag || "vitals",
+          renotify: true,
+          requireInteraction: d.urgent === "1"
+        }
+      );
+
+    }
+  );
+
+}
+
+
+pushBtn.addEventListener("click", enablePush);
+
+
+// Asks the server to send a test push to every saved device.
+pushTestBtn.addEventListener(
+  "click",
+  async () => {
+
+    try{
+
+      await set(ref(db, "pushTest"), Date.now());
+
+      setPushStatus("Test requested - it arrives only if server.py is running.");
+
+    }
+    catch(err){
+
+      console.error(err);
+
+      setPushStatus("Could not request a test push.");
+
+    }
+
+  }
+);
+
+
+/* =========================================
+   EMERGENCY CAMERA IMAGE
+   The vitals board takes ONE photo when an emergency starts and uploads it to
+   Firebase: /emergencyPhotoMeta = small info, /emergencyPhotoData = the picture.
+   The picture is downloaded only when the button is tapped (saves data).
+   Live video is only on the local page: it cannot travel over the internet.
+========================================= */
+
+const camStatusLabel = document.getElementById("camStatusLabel");
+const showImgBtn = document.getElementById("showImgBtn");
+const emImgBox = document.getElementById("emImgBox");
+const emImg = document.getElementById("emImg");
+const emImgNote = document.getElementById("emImgNote");
+const camHint = document.getElementById("camHint");
+
+let photoMeta = null;
+let photoAttached = false;
+let photoVisible = false;
+let photoLoadedId = null;
+let photoLoading = false;
+
+
+function attachPhotoListener(){
+
+  if(photoAttached){
+    return;
+  }
+
+  photoAttached = true;
+
+  onValue(
+    ref(db, "emergencyPhotoMeta"),
+
+    (snap) => {
+
+      photoMeta = snap.val();
+
+      renderCamUI();
+
+    },
+
+    (err) => {
+
+      console.error("Emergency photo info read failed:", err);
+
+    }
+
+  );
+
+}
+
+
+// Only a photo from the last 10 minutes counts, so an old photo is never
+// mistaken for the current emergency.
+function photoIsFresh(){
+
+  return !!photoMeta &&
+         photoMeta.takenAt > 0 &&
+         (Date.now() - photoMeta.takenAt) < 10 * 60 * 1000;
+
+}
+
+
+function photoNote(){
+
+  return "Photo taken at " + (photoMeta ? photoMeta.clock : "--") +
+         (photoMeta && photoMeta.kind === 1
+           ? ", requested from the monitor."
+           : ", when the emergency started.");
+
+}
+
+
+function hidePhoto(){
+
+  photoVisible = false;
+
+  emImgBox.style.display = "none";
+
+  emImgNote.textContent = "";
+
+  showImgBtn.textContent = "SHOW EMERGENCY IMAGE";
+
+}
+
+
+async function loadPhoto(){
+
+  if(photoLoading || !photoMeta){
+    return;
+  }
+
+  photoLoading = true;
+
+  emImgNote.textContent = "Loading image...";
+
+  try{
+
+    const snap = await get(ref(db, "emergencyPhotoData"));
+
+    const raw = snap.val();
+
+    if(!raw){
+      throw new Error("no image data");
+    }
+
+    // Stored as base64 text, sometimes with a short prefix in front of it.
+    const text = String(raw);
+    const i = text.indexOf("base64,");
+    const b64 = i >= 0 ? text.slice(i + 7) : text;
+
+    emImg.src = "data:image/jpeg;base64," + b64;
+
+    photoLoadedId = photoMeta.id;
+
+    emImgNote.textContent = photoNote();
+
+  }
+  catch(err){
+
+    console.error("Could not load the emergency image:", err);
+
+    emImgNote.textContent =
+      "Could not load the image. Hide it and tap the button again.";
+
+  }
+  finally{
+
+    photoLoading = false;
+
+  }
+
+}
+
+
+function renderCamUI(){
+
+  if(lastRawVitals && lastRawVitals.cam !== undefined){
+
+    camStatusLabel.textContent =
+      lastRawVitals.cam ? "Camera: connected" : "Camera: not connected";
+
+  }
+  else{
+
+    camStatusLabel.textContent = "Camera: no data yet";
+
+  }
+
+  const show = photoIsFresh();
+
+  showImgBtn.style.display = show ? "block" : "none";
+
+  camHint.textContent =
+    (EMERGENCY && !show)
+      ? "Emergency: waiting for the photo to upload..."
+      : "";
+
+  if(!show){
+
+    if(photoVisible){
+      hidePhoto();
+    }
+
+    return;
+
+  }
+
+  // A newer photo arrived while one is on screen: switch to it.
+  if(photoVisible && photoMeta && photoLoadedId !== photoMeta.id){
+    loadPhoto();
+  }
+
+}
+
+
+const reqPhotoBtn = document.getElementById("reqPhotoBtn");
+
+// Asks the monitor to take a picture right now and send it to Telegram.
+reqPhotoBtn.addEventListener(
+  "click",
+  async () => {
+
+    reqPhotoBtn.disabled = true;
+
+    try{
+
+      await set(ref(db, "photoRequest"), Date.now());
+
+      reqPhotoBtn.textContent = "Requested - the photo will arrive on Telegram";
+
+    }
+    catch(err){
+
+      console.error("Photo request failed:", err);
+
+      reqPhotoBtn.textContent = "Could not send the request";
+
+    }
+
+    setTimeout(() => {
+
+      reqPhotoBtn.textContent = "SEND CURRENT PHOTO TO TELEGRAM";
+
+      reqPhotoBtn.disabled = false;
+
+    }, 8000);
+
+  }
+);
+
+
+showImgBtn.addEventListener(
+  "click",
+  () => {
+
+    if(photoVisible){
+      hidePhoto();
+      return;
+    }
+
+    if(!photoMeta){
+      return;
+    }
+
+    photoVisible = true;
+
+    emImgBox.style.display = "block";
+
+    showImgBtn.textContent = "HIDE EMERGENCY IMAGE";
+
+    if(photoLoadedId === photoMeta.id && emImg.getAttribute("src")){
+      emImgNote.textContent = photoNote();
+    }
+    else{
+      loadPhoto();
+    }
+
+  }
+);
+
+
+/* =========================================
+   ALERT CONTROLS
+   - Mirrors /simulate from Firebase onto the mock buttons. Without this, reloading the
+     page showed every mock button as OFF while the monitor kept simulating (and beeping).
+   - Clear all: deletes alarms, timers and simulations and stops anything that is ringing.
+   - Simulate IR: pretends the medicine box was opened.
+========================================= */
+
+const clearAllBtn = document.getElementById("clearAllBtn");
+const simIrBtn = document.getElementById("simIrBtn");
+const alertCtlNote = document.getElementById("alertCtlNote");
+
+let simListenerAttached = false;
+
+
+function attachSimListener(){
+
+  if(simListenerAttached){
+    return;
+  }
+
+  simListenerAttached = true;
+
+  onValue(
+    ref(db, "simulate"),
+
+    (snap) => {
+
+      const data = snap.val() || {};
+
+      Object.keys(simButtons).forEach(
+        key => {
+
+          const btn = simButtons[key];
+
+          if(data[key] !== undefined && data[key] !== null){
+
+            simulationOverrides[key] = data[key];
+
+            btn.classList.add("active");
+            btn.textContent = "Stop Simulation";
+
+          }
+          else{
+
+            simulationOverrides[key] = null;
+
+            btn.classList.remove("active");
+            btn.textContent = btn.dataset.label;
+
+          }
+
+        }
+      );
+
+      renderVitals();
+
+    },
+
+    (err) => {
+
+      console.error("Simulation state read failed:", err);
+
+    }
+
+  );
+
+}
+
+
+clearAllBtn.addEventListener(
+  "click",
+  async () => {
+
+    const ok = confirm(
+      "Delete ALL alarms, timers and simulated alerts, and stop anything that is ringing?"
+    );
+
+    if(!ok){
+      return;
+    }
+
+    clearAllBtn.disabled = true;
+
+    try{
+
+      Object.keys(simulationOverrides).forEach(
+        key => { simulationOverrides[key] = null; }
+      );
+
+      await remove(ref(db, "simulate"));
+      await remove(ref(db, "notifications"));
+      await set(ref(db, "clearAll"), Date.now());
+
+      renderVitals();
+
+      alertCtlNote.textContent =
+        "Cloud reminders and simulations deleted; clear command sent. If the monitor is offline, use its hotspot page to clear local alarms.";
+
+    }
+    catch(err){
+
+      console.error("Clear all failed:", err);
+
+      alertCtlNote.textContent =
+        "Could not clear: " + err.message;
+
+    }
+
+    clearAllBtn.disabled = false;
+
+  }
+);
+
+
+simIrBtn.addEventListener(
+  "click",
+  async () => {
+
+    try{
+
+      await set(ref(db, "simIr"), Date.now());
+
+      alertCtlNote.textContent =
+        "Simulated: medicine box opened (only matters while a medicine alarm is ringing).";
+
+    }
+    catch(err){
+
+      console.error("Simulate IR failed:", err);
+
+      alertCtlNote.textContent =
+        "Could not send: " + err.message;
+
+    }
+
+  }
+);
+
+
+// The button disappears by itself 10 minutes after the photo was taken.
+setInterval(renderCamUI, 30000);
+
+
+renderNotifications();
+
+</script>
+
+</body>
+</html>
