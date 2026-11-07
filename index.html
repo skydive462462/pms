@@ -2100,7 +2100,8 @@ function renderVitals(){
   EMERGENCY =
     (data.bpm  !== undefined && data.bpm  !== null && data.bpm  < 45) ||
     (data.temp !== undefined && data.temp !== null && data.temp < 20) ||
-    (data.spo2 !== undefined && data.spo2 !== null && data.spo2 < 87);
+    (data.spo2 !== undefined && data.spo2 !== null && data.spo2 < 87) ||
+    (data.fire === true);
 
 
   // Emergency push notifications are sent by server/server.py through
